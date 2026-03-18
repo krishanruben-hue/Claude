@@ -39,6 +39,10 @@ function applyClientFilters(cards, filters) {
 }
 
 export default function App() {
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('darkMode');
+    return stored !== null ? stored === 'true' : true;
+  });
   const [cards, setCards] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -56,6 +60,11 @@ export default function App() {
   const [view, setView] = useState('list'); // 'list' | 'grid' | 'icon'
   const [sort, setSort] = useState({ key: 'roi', dir: 'desc' });
   const searchTimer = useRef(null);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
 
   const {
     watchlists,
@@ -152,6 +161,13 @@ export default function App() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDarkMode(d => !d)}
+              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+              title={darkMode ? 'Bytt til lys modus' : 'Bytt til mørk modus'}
+            >
+              {darkMode ? '☀' : '🌙'}
+            </button>
             <button
               onClick={() => setShowWatchlistManager(true)}
               className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
