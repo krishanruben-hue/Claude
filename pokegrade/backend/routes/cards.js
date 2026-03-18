@@ -50,28 +50,62 @@ function computeMetrics(card, fxRate, batchSize = 1) {
   };
 }
 
-// GET /api/sets — returnerer alle unike sett (id + name)
-router.get('/sets', async (req, res) => {
-  try {
-    if (isMockMode) return res.json([]);
-    const { data, error } = await supabase
-      .from('cards')
-      .select('set_id, set_name')
-      .not('set_id', 'is', null)
-      .order('set_name');
-    if (error) return res.status(500).json({ error: error.message });
-    const seen = new Set();
-    const sets = [];
-    for (const row of data) {
-      if (!seen.has(row.set_id)) {
-        seen.add(row.set_id);
-        sets.push({ id: row.set_id, name: row.set_name });
-      }
-    }
-    res.json(sets);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Visningsnavn for alle sett (set_id → navn)
+const SET_NAMES = {
+  // Sword & Shield
+  swsh1: 'Sword & Shield',
+  swsh2: 'Rebel Clash',
+  swsh3: 'Darkness Ablaze',
+  swsh35: "Champion's Path",
+  swsh4: 'Vivid Voltage',
+  swsh45: 'Shining Fates',
+  swsh45sv: 'Shining Fates – Shiny Vault',
+  swsh5: 'Battle Styles',
+  swsh6: 'Chilling Reign',
+  swsh7: 'Evolving Skies',
+  cel25: 'Celebrations',
+  cel25c: 'Celebrations – Classic Collection',
+  swsh8: 'Fusion Strike',
+  swsh9: 'Brilliant Stars',
+  swsh9tg: 'Brilliant Stars – Trainer Gallery',
+  swsh10: 'Astral Radiance',
+  swsh10tg: 'Astral Radiance – Trainer Gallery',
+  pgo: 'Pokémon GO',
+  swsh11: 'Lost Origin',
+  swsh11tg: 'Lost Origin – Trainer Gallery',
+  swsh12: 'Silver Tempest',
+  swsh12tg: 'Silver Tempest – Trainer Gallery',
+  swsh12pt5: 'Crown Zenith',
+  swsh12pt5gg: 'Crown Zenith – Galarian Gallery',
+  // Scarlet & Violet
+  sv1: 'Scarlet & Violet',
+  sv2: 'Paldea Evolved',
+  sv3: 'Obsidian Flames',
+  sv3pt5: '151',
+  sv4: 'Paradox Rift',
+  sv4pt5: 'Paldean Fates',
+  sv5: 'Temporal Forces',
+  sv6: 'Twilight Masquerade',
+  sv6pt5: 'Shrouded Fable',
+  sv7: 'Stellar Crown',
+  sv8: 'Surging Sparks',
+  sv8pt5: 'Prismatic Evolutions',
+  sv9: 'Journey Together',
+  sv10: 'Destined Rivals',
+  zsv10pt5: 'Black Bolt',
+  rsv10pt5: 'White Flare',
+  // Mega Evolution
+  me1: 'Mega Evolution',
+  me2: 'Phantasmal Flames',
+  me2pt5: 'Ascended Heroes',
+};
+
+// GET /api/sets — returnerer alle sett (statisk liste synkronisert med import-skriptet)
+router.get('/sets', (_req, res) => {
+  const sets = Object.entries(SET_NAMES)
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  res.json(sets);
 });
 
 // GET /api/cards?page=1&limit=50&q=charizard&set=swsh1&rarity=SIR

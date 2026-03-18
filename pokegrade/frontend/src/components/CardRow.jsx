@@ -6,7 +6,7 @@ import WatchlistPopover from './WatchlistPopover.jsx';
 export default function CardRow({ card, onClick, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   const roiCls = roiColor(card.roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
-  const imgUrl = getCardImageUrl(card.set_name, card.set_number);
+  const imgUrl = card.image_url || getCardImageUrl(card.set_name, card.set_number);
   const [imgError, setImgError] = useState(false);
 
   return (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from './api/client.js';
 import CardList from './components/CardList.jsx';
+import { CardGrid, CardIconView } from './components/CardGrid.jsx';
 import FilterPanel from './components/FilterPanel.jsx';
 import CardDetail from './components/CardDetail.jsx';
 import BudgetSimulator from './components/BudgetSimulator.jsx';
@@ -52,6 +53,7 @@ export default function App() {
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
   const [allSets, setAllSets] = useState([]);
+  const [view, setView] = useState('list'); // 'list' | 'grid' | 'icon'
   const searchTimer = useRef(null);
 
   const {
@@ -236,6 +238,17 @@ export default function App() {
             />
             <div className="flex items-center justify-between mb-3 text-sm text-gray-500">
               <span>{total.toLocaleString('nb-NO')} kort totalt</span>
+              <div className="flex items-center gap-1 border border-pg-border rounded-lg overflow-hidden">
+                {[['list','☰ Liste'],['grid','⊞ Grid'],['icon','⊟ Icon']].map(([v, label]) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1 text-xs transition-colors ${view === v ? 'bg-pg-accent text-white' : 'text-gray-400 hover:text-white hover:bg-pg-card'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               {totalPages > 1 && (
                 <div className="flex items-center gap-2">
                   <button
@@ -256,13 +269,30 @@ export default function App() {
                 </div>
               )}
             </div>
-            <CardList
-              cards={filtered}
-              onCardClick={c => setSelectedCardId(c.id)}
-              watchlists={watchlists}
-              onToggleWatchlist={toggleCardInWatchlist}
-              onCreateWatchlist={createWatchlist}
-            />
+            {view === 'list' && (
+              <CardList
+                cards={filtered}
+                onCardClick={c => setSelectedCardId(c.id)}
+                watchlists={watchlists}
+                onToggleWatchlist={toggleCardInWatchlist}
+                onCreateWatchlist={createWatchlist}
+              />
+            )}
+            {view === 'grid' && (
+              <CardGrid
+                cards={filtered}
+                onCardClick={c => setSelectedCardId(c.id)}
+                watchlists={watchlists}
+                onToggleWatchlist={toggleCardInWatchlist}
+                onCreateWatchlist={createWatchlist}
+              />
+            )}
+            {view === 'icon' && (
+              <CardIconView
+                cards={filtered}
+                onCardClick={c => setSelectedCardId(c.id)}
+              />
+            )}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500">
                 <button
