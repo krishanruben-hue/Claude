@@ -10,18 +10,25 @@ function makeHeaders(apiKey) {
   };
 }
 
-export async function fetchPrices(pokemonApiId) {
+export async function fetchPrices(pokemonApiId, cardName) {
   const apiKey = process.env.POKEMON_API_KEY;
   if (!apiKey) throw new Error('POKEMON_API_KEY ikke konfigurert');
 
-  const res = await axios.get(`${BASE_URL}/cards/${pokemonApiId}`, {
+  const params = new URLSearchParams({ search: cardName });
+  const res = await axios.get(`${BASE_URL}/cards?${params.toString()}`, {
     headers: makeHeaders(apiKey),
     timeout: 10000,
   });
 
-  const data = res.data?.data ?? res.data;
-  const cm = data?.prices?.cardmarket;
-  const tcg = data?.prices?.tcg_player;
+  const items = res.data?.data ?? res.data ?? [];
+  const cards = Array.isArray(items) ? items : [];
+
+  // Finn kortets treff via lagret ID, fallback til første resultat
+  const card = cards.find(c => String(c.id) === String(pokemonApiId)) ?? cards[0];
+  if (!card) return { raw_usd: null, psa9_usd: null, psa10_usd: null };
+
+  const cm = card?.prices?.cardmarket;
+  const tcg = card?.prices?.tcg_player;
   const psa = cm?.graded?.psa ?? {};
 
   return {
@@ -35,9 +42,10 @@ export async function searchCards(name, setName, cardNumber) {
   const apiKey = process.env.POKEMON_API_KEY;
   if (!apiKey) throw new Error('POKEMON_API_KEY ikke konfigurert');
 
-  const params = new URLSearchParams({ name });
+  // Bygg søkestreng: navn + kortnummer gir mer presist treff
+  const searchQuery = cardNumber ? `${name} ${cardNumber}` : name;
+  const params = new URLSearchParams({ search: searchQuery });
   if (setName) params.set('set', setName);
-  if (cardNumber) params.set('number', cardNumber);
 
   const res = await axios.get(`${BASE_URL}/cards?${params.toString()}`, {
     headers: makeHeaders(apiKey),

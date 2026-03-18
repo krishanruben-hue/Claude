@@ -37,7 +37,7 @@ export async function refreshAllPrices(setId = null) {
   for (const card of cards || []) {
     if (!card.pokemon_api_id) continue;
     try {
-      const prices = await fetchPrices(card.pokemon_api_id);
+      const prices = await fetchPrices(card.pokemon_api_id, card.name);
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('price_snapshots').upsert({
         card_id: card.id,
