@@ -5,8 +5,14 @@ import axios from 'axios';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 const RAPIDAPI_HOST = 'pokemon-tcg-api.p.rapidapi.com';
 
+function cleanName(name) {
+  return name
+    .replace(/\s+(SIR|IR|Alt Art|Rainbow|VSTAR Alt Art|VMAX Alt Art)$/i, '')
+    .trim();
+}
+
 async function searchCard(name, setName, cardNumber) {
-  const params = new URLSearchParams({ name });
+  const params = new URLSearchParams({ name: cleanName(name) });
   if (setName) params.set('set', setName);
   if (cardNumber) params.set('number', cardNumber);
   const res = await axios.get(`https://${RAPIDAPI_HOST}/cards?${params}`, {
