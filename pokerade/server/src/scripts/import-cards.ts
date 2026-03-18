@@ -91,13 +91,9 @@ async function main(): Promise<void> {
   console.log('Henter settliste fra Pokemon TCG API...');
   const allSets = await fetchSets();
 
-  // Filter: Sword & Shield, Scarlet & Violet, or any set with "mega" in name/series
-  const TARGET_SERIES = new Set(['Sword & Shield', 'Scarlet & Violet']);
-  const targetSets = allSets.filter(s =>
-    TARGET_SERIES.has(s.series) ||
-    s.name.toLowerCase().includes('mega') ||
-    s.series.toLowerCase().includes('mega')
-  );
+  // Filter: eksakt serienavn – Sword & Shield, Scarlet & Violet, Mega Evolution
+  const TARGET_SERIES = new Set(['Sword & Shield', 'Scarlet & Violet', 'Mega Evolution']);
+  const targetSets = allSets.filter(s => TARGET_SERIES.has(s.series));
 
   // Sort by release date
   targetSets.sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
