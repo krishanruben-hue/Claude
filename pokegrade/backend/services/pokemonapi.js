@@ -15,10 +15,15 @@ export async function fetchPrices(pokemonApiId, cardName, eurUsdRate = 1.08) {
   if (!apiKey) throw new Error('POKEMON_API_KEY ikke konfigurert');
 
   const params = new URLSearchParams({ search: cardName });
-  const res = await axios.get(`${BASE_URL}/cards?${params.toString()}`, {
-    headers: makeHeaders(apiKey),
-    timeout: 10000,
-  });
+  const url = `${BASE_URL}/cards?${params.toString()}`;
+  let res;
+  try {
+    res = await axios.get(url, { headers: makeHeaders(apiKey), timeout: 10000 });
+  } catch (err) {
+    const status = err.response?.status;
+    const body = JSON.stringify(err.response?.data)?.slice(0, 200);
+    throw new Error(`HTTP ${status} fra API (${url.slice(0, 80)}): ${body}`);
+  }
 
   const items = res.data?.data ?? res.data ?? [];
   const cards = Array.isArray(items) ? items : [];
