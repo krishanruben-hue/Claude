@@ -103,15 +103,24 @@ async function main() {
       continue;
     }
 
-    const rows = cards.map((c) => ({
-      name: c.name,
-      set_name: c.set?.name ?? setId,
-      set_number: c.number,
-      set_id: setId,
-      supertype: c.supertype ?? null,
-      rarity: c.rarity ?? null,
-      image_url: c.images?.small ?? null,
-    }));
+    // Dedupliser på (set_id, set_number) — noen sett har duplikate numre
+    const seen = new Set();
+    const rows = cards
+      .map((c) => ({
+        name: c.name,
+        set_name: c.set?.name ?? setId,
+        set_number: c.number,
+        set_id: setId,
+        supertype: c.supertype ?? null,
+        rarity: c.rarity ?? null,
+        image_url: c.images?.small ?? null,
+      }))
+      .filter((r) => {
+        const key = `${r.set_id}|${r.set_number}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       await upsertBatch(rows.slice(i, i + BATCH_SIZE));
