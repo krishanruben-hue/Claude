@@ -17,7 +17,7 @@ async function searchCard(name, setName, cardNumber) {
   if (cardNumber) params.set('number', cardNumber);
   const res = await axios.get(`https://${RAPIDAPI_HOST}/cards?${params}`, {
     headers: { 'x-rapidapi-key': process.env.POKEMON_API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST },
-    timeout: 10000,
+    timeout: 20000,
   });
   const items = res.data?.data ?? res.data ?? [];
   return Array.isArray(items) ? items.map(c => ({ id: c.id, name: c.name })) : [];
