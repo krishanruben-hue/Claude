@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CardMetrics } from '@/lib/types';
-import { getCards } from '@/lib/db';
+import { getCards } from '@/lib/api';
 import { computeMetrics } from '@/lib/calculations';
 
 const FALLBACK_FX = 10.7;
@@ -27,15 +27,14 @@ export function useCardData() {
     setLoading(true);
     setError(null);
     try {
-      const rate = await fetchFxRate();
+      const [rate, cards] = await Promise.all([fetchFxRate(), getCards()]);
       setFxRate(rate);
-      const cards = getCards();
       const metrics = cards.map(c => computeMetrics(c, rate));
       setAllMetrics(metrics);
       const sets = [...new Set(cards.map(c => c.set))].sort();
       setAvailableSets(sets);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Ukjent feil');
+      setError(e instanceof Error ? e.message : 'Ukjent feil – er backend-serveren oppe?');
     } finally {
       setLoading(false);
     }
