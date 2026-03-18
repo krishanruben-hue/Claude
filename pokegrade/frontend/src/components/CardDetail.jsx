@@ -56,7 +56,9 @@ export default function CardDetail({ cardId, onClose, watchlists, onToggleWatchl
   const roiCls = roiColor(roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
   const popTable = card.psa_population_table || {};
-  const hiresUrl = getCardImageUrlHires(card.set_name, card.set_number);
+  const hiresUrl = card.image_url
+    ? card.image_url.replace(/\.png$/, '_hires.png')
+    : getCardImageUrlHires(card.set_name, card.set_number);
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
