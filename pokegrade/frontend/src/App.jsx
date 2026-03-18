@@ -13,10 +13,18 @@ const INITIAL_FILTERS = {
   raw_nok: null,
   total_pop: null,
   finn_deviation: null,
+  search: null,
+  set: null,
 };
 
 function applyFilters(cards, filters) {
   return cards.filter(card => {
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      const haystack = `${card.name} ${card.set_name}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    if (filters.set && card.set_name !== filters.set) return false;
     if (filters.gem_rate != null && (card.gem_rate ?? -Infinity) < filters.gem_rate) return false;
     if (filters.multiplier != null && (card.multiplier ?? -Infinity) < filters.multiplier) return false;
     if (filters.roi != null && (card.roi ?? -Infinity) < filters.roi) return false;
@@ -57,6 +65,7 @@ export default function App() {
     setFilters(prev => ({ ...prev, [key]: value }));
   }
 
+  const allSets = useMemo(() => [...new Set(cards.map(c => c.set_name))].sort(), [cards]);
   const filtered = useMemo(() => applyFilters(cards, filters), [cards, filters]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
@@ -157,6 +166,7 @@ export default function App() {
               values={filters}
               onChange={handleFilterChange}
               activeCount={activeFilterCount}
+              allSets={allSets}
             />
             <CardList cards={filtered} onCardClick={c => setSelectedCardId(c.id)} />
           </>
