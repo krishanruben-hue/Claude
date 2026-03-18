@@ -122,6 +122,18 @@ async function main(): Promise<void> {
   let totalErrors = 0;
 
   for (const set of targetSets) {
+    // Sjekk om settet allerede er fullstendig importert
+    const { count: existing } = await supabase
+      .from('cards')
+      .select('id', { count: 'exact', head: true })
+      .eq('set_name', set.name);
+
+    if (existing !== null && existing >= set.total) {
+      console.log(`Hopper over ${set.name} (${existing}/${set.total} kort allerede importert)`);
+      totalCards += existing;
+      continue;
+    }
+
     process.stdout.write(`Henter ${set.name}...`);
 
     let cards: PtcgCard[];
