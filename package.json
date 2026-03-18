@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "cd pokegrade/backend && npm install && cd ../frontend && npm install && npm run build",
+    "build": "echo 'Built in postinstall'",
     "start": "node pokegrade/backend/index.js",
     "dev": "cd pokegrade/frontend && npm install && npm run dev"
   },
