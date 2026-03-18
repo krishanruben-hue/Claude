@@ -48,6 +48,20 @@ export async function getLatestFxRate() {
   return data.usd_nok;
 }
 
+// Hent gjeldende EUR→USD-kurs (for konvertering av Cardmarket-priser)
+export async function getEurToUsdRate() {
+  try {
+    const params = { base: 'EUR', symbols: 'USD' };
+    if (process.env.EXCHANGERATE_API_KEY) {
+      params.access_key = process.env.EXCHANGERATE_API_KEY;
+    }
+    const res = await axios.get('https://api.exchangerate.host/latest', { params, timeout: 10000 });
+    return res.data?.rates?.USD || 1.08; // fallback til omtrentlig kurs
+  } catch {
+    return 1.08;
+  }
+}
+
 // Forward-fill manglende datoer (helger/helligdager)
 export async function backfillMissingFxRates() {
   if (!supabase) return;

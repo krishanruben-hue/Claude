@@ -10,7 +10,7 @@ function makeHeaders(apiKey) {
   };
 }
 
-export async function fetchPrices(pokemonApiId, cardName) {
+export async function fetchPrices(pokemonApiId, cardName, eurUsdRate = 1.08) {
   const apiKey = process.env.POKEMON_API_KEY;
   if (!apiKey) throw new Error('POKEMON_API_KEY ikke konfigurert');
 
@@ -31,10 +31,14 @@ export async function fetchPrices(pokemonApiId, cardName) {
   const tcg = card?.prices?.tcg_player;
   const psa = cm?.graded?.psa ?? {};
 
+  // TCGPlayer-priser er i USD, Cardmarket-priser (PSA) er i EUR → konverter til USD
+  const psa9Eur = parseFloat(psa.psa9) || null;
+  const psa10Eur = parseFloat(psa.psa10) || null;
+
   return {
     raw_usd: parseFloat(tcg?.market_price) || null,
-    psa9_usd: parseFloat(psa.psa9) || null,
-    psa10_usd: parseFloat(psa.psa10) || null,
+    psa9_usd: psa9Eur ? Math.round(psa9Eur * eurUsdRate * 100) / 100 : null,
+    psa10_usd: psa10Eur ? Math.round(psa10Eur * eurUsdRate * 100) / 100 : null,
   };
 }
 
