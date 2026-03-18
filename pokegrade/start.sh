@@ -26,12 +26,16 @@ if [ ! -d "frontend/node_modules" ]; then
   cd frontend && npm install && cd ..
 fi
 
-# Lag .env med Supabase-noekler
-cat > backend/.env << 'EOF'
+# Lag .env om den ikke allerede finnes (bevar eksisterende API-noekler)
+if [ ! -f "backend/.env" ]; then
+  cat > backend/.env << 'EOF'
 SUPABASE_URL=https://dejgztmnfstkucpnwfkf.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlamd6dG1uZnN0a3VjcG53ZmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MzA2NDksImV4cCI6MjA4OTQwNjY0OX0.xRVWpFwks6Gw1YvZgnA2IQWfZoLtPcsi1imjVdWTf8g
+POKEMON_API_KEY=
 PORT=3001
 EOF
+  echo "[INFO] backend/.env opprettet – legg inn POKEMON_API_KEY fra RapidAPI-dashbordet"
+fi
 
 echo ""
 echo "Starter backend pa port 3001..."
