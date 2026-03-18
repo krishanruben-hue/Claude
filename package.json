@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "cd pokegrade/frontend && npm install && npm run build",
-    "start": "cd pokegrade/backend && npm install && node index.js",
+    "postinstall": "cd pokegrade/backend && npm install && cd ../frontend && npm install && npm run build",
+    "start": "node pokegrade/backend/index.js",
     "dev": "cd pokegrade/frontend && npm install && npm run dev"
   },
   "dependencies": {
