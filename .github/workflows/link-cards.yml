@@ -1,0 +1,31 @@
+name: Koble API-IDer for kort
+
+on:
+  workflow_dispatch:
+    inputs:
+      set_name:
+        description: 'Sett-navn (la stå tomt for alle kort)'
+        required: false
+        default: ''
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer avhengigheter
+        working-directory: pokegrade/backend
+        run: npm install
+
+      - name: Koble API-IDer
+        working-directory: pokegrade/backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          POKEMON_API_KEY: ${{ secrets.POKEMON_API_KEY }}
+        run: node ../scripts/link-cards.js "${{ github.event.inputs.set_name }}"

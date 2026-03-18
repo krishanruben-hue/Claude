@@ -1,6 +1,6 @@
 # PokeGrade
 
-Webapp for norske Pokemon-kortinvestorer. Henter priser fra Pricecharting, PSA Pop Report og Finn.no for å beregne ROI, multiplier og gem rate per kort.
+Webapp for norske Pokemon-kortinvestorer. Henter priser fra pokemon-api.com (Cardmarket EU + TCGPlayer US), PSA Pop Report og Finn.no for å beregne ROI, multiplier og gem rate per kort.
 
 ## Kom i gang
 
@@ -23,7 +23,7 @@ Rediger `backend/.env`:
 | Variabel | Hvor | Kostnad |
 |---|---|---|
 | `SUPABASE_URL` + `SUPABASE_ANON_KEY` | supabase.com | Gratis |
-| `PRICECHARTING_API_KEY` | pricecharting.com | $10/mnd |
+| `POKEMON_API_KEY` | rapidapi.com (pokemon-api.com) | Betalt |
 | `EXCHANGERATE_API_KEY` | exchangerate.host | Gratis |
 
 ### Database-oppsett (Supabase)
@@ -36,5 +36,5 @@ Rediger `backend/.env`:
 - Backend: Node.js + Express
 - Database: Supabase (PostgreSQL)
 - Scraping: Playwright (Finn.no, PSA Pop Report)
-- Pris-API: Pricecharting
+- Pris-API: pokemon-api.com via RapidAPI (Cardmarket EU + TCGPlayer US + PSA)
 - FX-data: ExchangeRate API

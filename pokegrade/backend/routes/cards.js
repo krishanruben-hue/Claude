@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { supabase, isMockMode } from '../db/supabase.js';
-import { MOCK_CARDS, MOCK_FX_RATE, MOCK_FINN_LISTINGS } from '../db/mockData.js';
 import {
   calculateROI, calculateMultiplier, calculateGemRate,
   calculateBreakEvenGrade, calculateGradingCost, calculateFinnDeviation, usdToNok,
@@ -123,16 +122,8 @@ const SORT_COLUMNS = {
 // GET /api/cards?page=1&limit=50&q=charizard&set=swsh1&rarity=SIR&sort_by=roi&sort_dir=desc
 router.get('/', async (req, res) => {
   try {
-    const fxRate = isMockMode ? MOCK_FX_RATE : await getLatestFxRate();
-
-    if (isMockMode) {
-      const cards = MOCK_CARDS.map(card => ({
-        ...card,
-        ...computeMetrics(card, fxRate),
-        fx_rate: fxRate,
-      }));
-      return res.json({ cards, total: cards.length, mock: true, fx_rate: fxRate });
-    }
+    if (isMockMode) return res.status(503).json({ error: 'Supabase ikke konfigurert' });
+    const fxRate = await getLatestFxRate();
 
     const page    = Math.max(1, parseInt(req.query.page)  || 1);
     const limit   = Math.min(200, parseInt(req.query.limit) || 50);
@@ -197,30 +188,9 @@ router.get('/', async (req, res) => {
 // GET /api/cards/:id
 router.get('/:id', async (req, res) => {
   try {
+    if (isMockMode) return res.status(503).json({ error: 'Supabase ikke konfigurert' });
     const { id } = req.params;
-    const fxRate = isMockMode ? MOCK_FX_RATE : await getLatestFxRate();
-
-    if (isMockMode) {
-      const card = MOCK_CARDS.find(c => c.id === id);
-      if (!card) return res.status(404).json({ error: 'Kort ikke funnet' });
-
-      const finnListings = (MOCK_FINN_LISTINGS[id] || []).map(l => ({
-        ...l,
-        deviation: calculateFinnDeviation(l.price_nok, card.raw_usd * fxRate),
-      }));
-
-      const popTable = {};
-      for (let g = 1; g <= 10; g++) popTable[g] = card[`grade_${g}`] || 0;
-
-      return res.json({
-        ...card,
-        ...computeMetrics(card, fxRate),
-        fx_rate: fxRate,
-        psa_population_table: popTable,
-        finn_listings: finnListings,
-        mock: true,
-      });
-    }
+    const fxRate = await getLatestFxRate();
 
     const { data: card, error } = await supabase.from('cards').select('*').eq('id', id).single();
     if (error || !card) return res.status(404).json({ error: 'Kort ikke funnet' });
