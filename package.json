@@ -1,0 +1,13 @@
+{
+  "name": "pokegrade",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd pokegrade/frontend && npm install && npm run dev",
+    "build": "cd pokegrade/frontend && npm install && npm run build",
+    "preview": "cd pokegrade/frontend && npm run preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
