@@ -50,7 +50,31 @@ function computeMetrics(card, fxRate, batchSize = 1) {
   };
 }
 
-// GET /api/cards
+// GET /api/sets — returnerer alle unike sett (id + name)
+router.get('/sets', async (req, res) => {
+  try {
+    if (isMockMode) return res.json([]);
+    const { data, error } = await supabase
+      .from('cards')
+      .select('set_id, set_name')
+      .not('set_id', 'is', null)
+      .order('set_name');
+    if (error) return res.status(500).json({ error: error.message });
+    const seen = new Set();
+    const sets = [];
+    for (const row of data) {
+      if (!seen.has(row.set_id)) {
+        seen.add(row.set_id);
+        sets.push({ id: row.set_id, name: row.set_name });
+      }
+    }
+    res.json(sets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/cards?page=1&limit=50&q=charizard&set=swsh1&rarity=SIR
 router.get('/', async (req, res) => {
   try {
     const fxRate = isMockMode ? MOCK_FX_RATE : await getLatestFxRate();
@@ -61,58 +85,84 @@ router.get('/', async (req, res) => {
         ...computeMetrics(card, fxRate),
         fx_rate: fxRate,
       }));
-      return res.json({ cards, mock: true, fx_rate: fxRate });
+      return res.json({ cards, total: cards.length, mock: true, fx_rate: fxRate });
     }
 
-    // Hent kort med siste snapshot og PSA-pop
-    const { data: cards, error } = await supabase
-      .from('cards')
-      .select('*');
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(200, parseInt(req.query.limit) || 50);
+    const from  = (page - 1) * limit;
+    const q     = req.query.q?.trim() || '';
+    const set   = req.query.set?.trim() || '';
+    const rarity = req.query.rarity?.trim() || '';
 
+    // Bygg kortspørring med filtre
+    let query = supabase.from('cards').select('*', { count: 'exact' });
+    if (q)      query = query.ilike('name', `%${q}%`);
+    if (set)    query = query.eq('set_id', set);
+    if (rarity) query = query.eq('rarity', rarity);
+    query = query.order('name').range(from, from + limit - 1);
+
+    const { data: cards, error, count } = await query;
     if (error) return res.status(500).json({ error: error.message });
+    if (!cards.length) return res.json({ cards: [], total: 0, mock: false, fx_rate: fxRate });
 
-    const enriched = await Promise.all(cards.map(async (card) => {
-      // Siste priser
-      const { data: snapshot } = await supabase
-        .from('price_snapshots')
-        .select('raw_usd, psa9_usd, psa10_usd')
-        .eq('card_id', card.id)
-        .order('date', { ascending: false })
-        .limit(1)
-        .single();
+    const ids = cards.map(c => c.id);
 
-      // Siste PSA-pop
-      const { data: pop } = await supabase
-        .from('psa_population')
-        .select('*')
-        .eq('card_id', card.id)
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-        .single();
+    // Batch-hent siste snapshot per kort (én spørring)
+    const { data: snapshots } = await supabase
+      .from('price_snapshots')
+      .select('card_id, raw_usd, psa9_usd, psa10_usd, date')
+      .in('card_id', ids)
+      .order('date', { ascending: false });
 
-      // Finn-annonser siste 2 timer
-      const twoHoursAgo = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
-      const { data: finnRows } = await supabase
-        .from('finn_listings')
-        .select('price_nok, flag')
-        .eq('card_id', card.id)
-        .eq('flag', 'none')
-        .gte('fetched_at', twoHoursAgo);
+    const latestSnapshot = {};
+    for (const s of snapshots || []) {
+      if (!latestSnapshot[s.card_id]) latestSnapshot[s.card_id] = s;
+    }
 
-      const finnPrices = (finnRows || []).map(r => r.price_nok).filter(Boolean);
+    // Batch-hent siste PSA-pop per kort (én spørring)
+    const { data: pops } = await supabase
+      .from('psa_population')
+      .select('*')
+      .in('card_id', ids)
+      .order('fetched_at', { ascending: false });
+
+    const latestPop = {};
+    for (const p of pops || []) {
+      if (!latestPop[p.card_id]) latestPop[p.card_id] = p;
+    }
+
+    // Batch-hent Finn-annonser siste 2 timer (én spørring)
+    const twoHoursAgo = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+    const { data: finnRows } = await supabase
+      .from('finn_listings')
+      .select('card_id, price_nok')
+      .in('card_id', ids)
+      .eq('flag', 'none')
+      .gte('fetched_at', twoHoursAgo);
+
+    const finnByCard = {};
+    for (const f of finnRows || []) {
+      if (!finnByCard[f.card_id]) finnByCard[f.card_id] = [];
+      finnByCard[f.card_id].push(f.price_nok);
+    }
+
+    const enriched = cards.map(card => {
+      const snapshot  = latestSnapshot[card.id] || {};
+      const pop       = latestPop[card.id] || {};
+      const finnPrices = (finnByCard[card.id] || []).filter(Boolean);
       const merged = {
         ...card,
-        ...(snapshot || {}),
-        ...(pop || {}),
-        finn_count: finnPrices.length,
+        ...snapshot,
+        ...pop,
+        finn_count:   finnPrices.length,
         finn_min_nok: finnPrices.length ? Math.min(...finnPrices) : null,
         finn_max_nok: finnPrices.length ? Math.max(...finnPrices) : null,
       };
-
       return { ...merged, ...computeMetrics(merged, fxRate), fx_rate: fxRate };
-    }));
+    });
 
-    res.json({ cards: enriched, mock: false, fx_rate: fxRate });
+    res.json({ cards: enriched, total: count, page, limit, mock: false, fx_rate: fxRate });
   } catch (err) {
     console.error('[cards] GET /', err);
     res.status(500).json({ error: err.message });

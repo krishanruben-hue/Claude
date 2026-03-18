@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from './api/client.js';
 import CardList from './components/CardList.jsx';
 import FilterPanel from './components/FilterPanel.jsx';
@@ -6,6 +6,8 @@ import CardDetail from './components/CardDetail.jsx';
 import BudgetSimulator from './components/BudgetSimulator.jsx';
 import WatchlistManager from './components/WatchlistManager.jsx';
 import { useWatchlists } from './hooks/useWatchlists.js';
+
+const PAGE_SIZE = 50;
 
 const INITIAL_FILTERS = {
   gem_rate: null,
@@ -17,17 +19,13 @@ const INITIAL_FILTERS = {
   finn_deviation: null,
   search: null,
   set: null,
+  rarity: null,
   watchlist: null,
 };
 
-function applyFilters(cards, filters) {
+// Metrics-filtre gjøres klient-side (beregnes på backend, ikke lagret i DB)
+function applyClientFilters(cards, filters) {
   return cards.filter(card => {
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      const haystack = `${card.name} ${card.set_name}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    if (filters.set && card.set_name !== filters.set) return false;
     if (filters.watchlist && !filters.watchlist.cardIds.includes(card.id)) return false;
     if (filters.gem_rate != null && (card.gem_rate ?? -Infinity) < filters.gem_rate) return false;
     if (filters.multiplier != null && (card.multiplier ?? -Infinity) < filters.multiplier) return false;
@@ -41,6 +39,8 @@ function applyFilters(cards, filters) {
 
 export default function App() {
   const [cards, setCards] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
@@ -51,6 +51,8 @@ export default function App() {
   const [adminStatus, setAdminStatus] = useState('');
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
+  const [allSets, setAllSets] = useState([]);
+  const searchTimer = useRef(null);
 
   const {
     watchlists,
@@ -60,10 +62,18 @@ export default function App() {
     toggleCardInWatchlist,
   } = useWatchlists();
 
-  useEffect(() => {
-    api.getCards()
+  const fetchCards = useCallback((currentPage, currentFilters) => {
+    setLoading(true);
+    api.getCards({
+      page: currentPage,
+      limit: PAGE_SIZE,
+      q: currentFilters.search || '',
+      set: currentFilters.set || '',
+      rarity: currentFilters.rarity || '',
+    })
       .then(res => {
         setCards(res.cards || []);
+        setTotal(res.total || 0);
         setIsMock(res.mock);
         setFxRate(res.fx_rate);
         setLoading(false);
@@ -74,12 +84,28 @@ export default function App() {
       });
   }, []);
 
+  // Last sett én gang
+  useEffect(() => {
+    api.getSets().then(setAllSets).catch(() => {});
+  }, []);
+
+  // Refetch når side endres
+  useEffect(() => {
+    fetchCards(page, filters);
+  }, [page]); // eslint-disable-line
+
+  // Refetch fra side 1 når server-side filtre endres
+  useEffect(() => {
+    setPage(1);
+    fetchCards(1, filters);
+  }, [filters.search, filters.set, filters.rarity]); // eslint-disable-line
+
   function handleFilterChange(key, value) {
     setFilters(prev => ({ ...prev, [key]: value }));
   }
 
-  const allSets = useMemo(() => [...new Set(cards.map(c => c.set_name))].sort(), [cards]);
-  const filtered = useMemo(() => applyFilters(cards, filters), [cards, filters]);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const filtered = useMemo(() => applyClientFilters(cards, filters), [cards, filters]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
   async function adminAction(action, label) {
@@ -87,10 +113,7 @@ export default function App() {
     try {
       const res = await action();
       setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${res.refreshed} oppdatert`);
-      if (!res.mock) {
-        const updated = await api.getCards();
-        setCards(updated.cards || []);
-      }
+      if (!res.mock) fetchCards(page, filters);
     } catch (err) {
       setAdminStatus(`Feil: ${err.message}`);
     }
@@ -211,6 +234,28 @@ export default function App() {
               activeCount={activeFilterCount}
               allSets={allSets}
             />
+            <div className="flex items-center justify-between mb-3 text-sm text-gray-500">
+              <span>{total.toLocaleString('nb-NO')} kort totalt</span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-2 py-1 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                  >
+                    ‹
+                  </button>
+                  <span>Side {page} av {totalPages}</span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-2 py-1 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
             <CardList
               cards={filtered}
               onCardClick={c => setSelectedCardId(c.id)}
@@ -218,6 +263,25 @@ export default function App() {
               onToggleWatchlist={toggleCardInWatchlist}
               onCreateWatchlist={createWatchlist}
             />
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                >
+                  ‹ Forrige
+                </button>
+                <span>Side {page} av {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                >
+                  Neste ›
+                </button>
+              </div>
+            )}
           </>
         )}
       </main>

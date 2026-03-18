@@ -17,6 +17,7 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
     numericFilters.forEach(f => onChange(f.key, null));
     onChange('search', null);
     onChange('set', null);
+    onChange('rarity', null);
   }
 
   return (
@@ -35,7 +36,7 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
         )}
       </div>
 
-      {/* Søk og sett-filter */}
+      {/* Søk, sett og rarity */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-sm">🔍</span>
@@ -43,27 +44,40 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
             type="text"
             value={values.search || ''}
             onChange={e => onChange('search', e.target.value || null)}
-            placeholder="Søk på kortnavn eller sett..."
+            placeholder="Søk på kortnavn..."
             className={`w-full bg-pg-bg border rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-pg-accent transition-colors ${values.search ? 'border-pg-accent' : 'border-pg-border'}`}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => onChange('set', null)}
-            className={`text-sm px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap ${!values.set ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
-          >
-            Alle sett
-          </button>
+        <select
+          value={values.set || ''}
+          onChange={e => onChange('set', e.target.value || null)}
+          className={`bg-pg-bg border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pg-accent transition-colors ${values.set ? 'border-pg-accent' : 'border-pg-border'}`}
+        >
+          <option value="">Alle sett</option>
           {allSets.map(s => (
-            <button
-              key={s}
-              onClick={() => onChange('set', values.set === s ? null : s)}
-              className={`text-sm px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap ${values.set === s ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
-            >
-              {s}
-            </button>
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
-        </div>
+        </select>
+        <select
+          value={values.rarity || ''}
+          onChange={e => onChange('rarity', e.target.value || null)}
+          className={`bg-pg-bg border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pg-accent transition-colors ${values.rarity ? 'border-pg-accent' : 'border-pg-border'}`}
+        >
+          <option value="">Alle rarity</option>
+          <option value="Special Illustration Rare">Special Illustration Rare</option>
+          <option value="Illustration Rare">Illustration Rare</option>
+          <option value="Hyper Rare">Hyper Rare</option>
+          <option value="Special Art Rare">Special Art Rare</option>
+          <option value="Rare Holo VMAX">Rare Holo VMAX</option>
+          <option value="Rare Holo V">Rare Holo V</option>
+          <option value="Rare Holo VSTAR">Rare Holo VSTAR</option>
+          <option value="Rare Rainbow">Rare Rainbow</option>
+          <option value="Rare Secret">Rare Secret</option>
+          <option value="Rare Ultra">Rare Ultra</option>
+          <option value="Rare Holo">Rare Holo</option>
+          <option value="Uncommon">Uncommon</option>
+          <option value="Common">Common</option>
+        </select>
       </div>
 
       {/* Numeriske filtre */}

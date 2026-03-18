@@ -17,7 +17,17 @@ async function post(path, body) {
 }
 
 export const api = {
-  getCards: () => get('/cards'),
+  getSets: () => get('/cards/sets'),
+  getCards: (params = {}) => {
+    const qs = new URLSearchParams();
+    if (params.page)   qs.set('page',   params.page);
+    if (params.limit)  qs.set('limit',  params.limit);
+    if (params.q)      qs.set('q',      params.q);
+    if (params.set)    qs.set('set',    params.set);
+    if (params.rarity) qs.set('rarity', params.rarity);
+    const q = qs.toString();
+    return get(`/cards${q ? `?${q}` : ''}`);
+  },
   getCard: (id) => get(`/cards/${id}`),
   refreshPrices: () => post('/admin/refresh-prices'),
   refreshPsa: () => post('/admin/refresh-psa'),
