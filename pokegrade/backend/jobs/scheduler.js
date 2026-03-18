@@ -121,7 +121,7 @@ export async function autoLinkCardIds() {
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
     }
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 150));
   }
 
   return { linked, errors };
