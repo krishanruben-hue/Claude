@@ -101,7 +101,7 @@ export async function autoLinkCardIds() {
   if (!supabase) return { linked: 0, errors: [] };
   const { data: cards } = await supabase
     .from('cards')
-    .select('id, name, set_name')
+    .select('id, name, set_name, set_number')
     .is('pokemon_api_id', null);
 
   const errors = [];
@@ -109,7 +109,7 @@ export async function autoLinkCardIds() {
 
   for (const card of cards || []) {
     try {
-      const results = await searchCards(card.name, card.set_name);
+      const results = await searchCards(card.name, card.set_name, card.set_number);
       if (results.length === 0) {
         errors.push({ card: card.name, error: 'Ingen treff i API' });
       } else {
