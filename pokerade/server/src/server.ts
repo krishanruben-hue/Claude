@@ -1,7 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { initDb } from './database';
-import { SEED_DATA } from '../../src/lib/db';
 import cardsRouter from './routes/cards';
 import scrapeRouter from './routes/scrape';
 import { startScheduler } from './scheduler';
@@ -25,10 +24,9 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: 'Intern serverfeil' });
 });
 
-initDb(SEED_DATA);
 startScheduler();
 
 app.listen(PORT, () => {
   console.log(`\nPokerade server kjører på http://localhost:${PORT}`);
-  console.log(`Data lagres i: ~/.pokerade/pokerade.db\n`);
+  console.log(`Database: Supabase (${process.env.SUPABASE_URL})\n`);
 });

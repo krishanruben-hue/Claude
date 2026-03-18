@@ -1,153 +1,74 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import os from 'os';
-import fs from 'fs';
+import { createClient } from '@supabase/supabase-js';
 import type { StoredCard } from '../../src/lib/types';
 
 export type { StoredCard };
 
-const DB_DIR = path.join(os.homedir(), '.pokerade');
-export const DB_PATH = path.join(DB_DIR, 'pokerade.db');
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_KEY = process.env.SUPABASE_KEY!;
 
-let db: Database.Database;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-export function getDb(): Database.Database {
-  return db;
-}
-
-export function initDb(seedData: StoredCard[]): void {
-  fs.mkdirSync(DB_DIR, { recursive: true });
-  db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS cards (
-      id            TEXT PRIMARY KEY,
-      name          TEXT NOT NULL,
-      set_name      TEXT NOT NULL,
-      number        TEXT NOT NULL,
-      raw_nok       REAL NOT NULL DEFAULT 0,
-      psa10_usd     REAL NOT NULL DEFAULT 0,
-      psa10_pop     INTEGER NOT NULL DEFAULT 0,
-      total_graded  INTEGER NOT NULL DEFAULT 0,
-      gem_rate      REAL NOT NULL DEFAULT 0,
-      finn_avg_price      REAL NOT NULL DEFAULT 0,
-      finn_listings_count INTEGER NOT NULL DEFAULT 0,
-      last_updated  TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS finn_listings (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      finn_code   TEXT UNIQUE NOT NULL,
-      card_id     TEXT REFERENCES cards(id) ON DELETE SET NULL,
-      title       TEXT NOT NULL,
-      price_nok   REAL,
-      url         TEXT NOT NULL,
-      thumbnail   TEXT,
-      published_at TEXT,
-      scraped_at  TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS price_history (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      card_id     TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
-      psa10_usd   REAL NOT NULL,
-      raw_nok     REAL NOT NULL,
-      recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS scrape_log (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      type        TEXT NOT NULL,
-      status      TEXT NOT NULL,
-      message     TEXT,
-      cards_updated INTEGER DEFAULT 0,
-      ran_at      TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-  `);
-
-  // Seed only if table is empty
-  const count = (db.prepare('SELECT COUNT(*) as c FROM cards').get() as { c: number }).c;
-  if (count === 0) {
-    console.log(`Seeding ${seedData.length} kort fra standard datasett...`);
-    const insert = db.prepare(`
-      INSERT OR IGNORE INTO cards
-        (id, name, set_name, number, raw_nok, psa10_usd, psa10_pop, total_graded,
-         gem_rate, finn_avg_price, finn_listings_count, last_updated)
-      VALUES
-        (@id, @name, @set, @number, @rawNok, @psa10Usd, @psa10Pop, @totalGraded,
-         @gemRate, @finnAvgPrice, @finnListingsCount, @lastUpdated)
-    `);
-    const insertMany = db.transaction((cards: StoredCard[]) => {
-      for (const c of cards) insert.run(c);
-    });
-    insertMany(seedData);
-    console.log('Seeding ferdig.');
-  }
-}
-
-// ─── Card helpers ────────────────────────────────────────────────────────────
+// ─── Type helpers ─────────────────────────────────────────────────────────────
 
 function rowToCard(row: Record<string, unknown>): StoredCard {
   return {
-    id:                 row.id as string,
-    name:               row.name as string,
-    set:                row.set_name as string,
-    number:             row.number as string,
-    rawNok:             row.raw_nok as number,
-    psa10Usd:           row.psa10_usd as number,
-    psa10Pop:           row.psa10_pop as number,
-    totalGraded:        row.total_graded as number,
-    gemRate:            row.gem_rate as number,
-    finnAvgPrice:       row.finn_avg_price as number,
-    finnListingsCount:  row.finn_listings_count as number,
-    lastUpdated:        row.last_updated as string,
+    id:                row.id as string,
+    name:              row.name as string,
+    set:               row.set_name as string,
+    number:            row.number as string,
+    rawNok:            row.raw_nok as number,
+    psa10Usd:          row.psa10_usd as number,
+    psa10Pop:          row.psa10_pop as number,
+    totalGraded:       row.total_graded as number,
+    gemRate:           row.gem_rate as number,
+    finnAvgPrice:      row.finn_avg_price as number,
+    finnListingsCount: row.finn_listings_count as number,
+    lastUpdated:       row.last_updated as string,
   };
 }
 
-export function getAllCards(): StoredCard[] {
-  return (db.prepare('SELECT * FROM cards ORDER BY name').all() as Record<string, unknown>[]).map(rowToCard);
+function cardToRow(card: StoredCard): Record<string, unknown> {
+  return {
+    id:                  card.id,
+    name:                card.name,
+    set_name:            card.set,
+    number:              card.number,
+    raw_nok:             card.rawNok,
+    psa10_usd:           card.psa10Usd,
+    psa10_pop:           card.psa10Pop,
+    total_graded:        card.totalGraded,
+    gem_rate:            card.gemRate,
+    finn_avg_price:      card.finnAvgPrice,
+    finn_listings_count: card.finnListingsCount,
+    last_updated:        card.lastUpdated,
+  };
 }
 
-export function upsertCard(card: StoredCard): void {
-  db.prepare(`
-    INSERT INTO cards
-      (id, name, set_name, number, raw_nok, psa10_usd, psa10_pop, total_graded,
-       gem_rate, finn_avg_price, finn_listings_count, last_updated)
-    VALUES
-      (@id, @name, @set, @number, @rawNok, @psa10Usd, @psa10Pop, @totalGraded,
-       @gemRate, @finnAvgPrice, @finnListingsCount, @lastUpdated)
-    ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
-      set_name = excluded.set_name,
-      number = excluded.number,
-      raw_nok = excluded.raw_nok,
-      psa10_usd = excluded.psa10_usd,
-      psa10_pop = excluded.psa10_pop,
-      total_graded = excluded.total_graded,
-      gem_rate = excluded.gem_rate,
-      finn_avg_price = excluded.finn_avg_price,
-      finn_listings_count = excluded.finn_listings_count,
-      last_updated = excluded.last_updated
-  `).run(card);
+// ─── Card helpers ─────────────────────────────────────────────────────────────
+
+export async function getAllCards(): Promise<StoredCard[]> {
+  const { data, error } = await supabase.from('cards').select('*').order('name');
+  if (error) throw error;
+  return (data as Record<string, unknown>[]).map(rowToCard);
 }
 
-export function deleteCardById(id: string): void {
-  db.prepare('DELETE FROM cards WHERE id = ?').run(id);
+export async function upsertCard(card: StoredCard): Promise<void> {
+  const { error } = await supabase.from('cards').upsert(cardToRow(card));
+  if (error) throw error;
 }
 
-export function resetCards(seedData: StoredCard[]): void {
-  db.prepare('DELETE FROM cards').run();
-  db.prepare('DELETE FROM finn_listings').run();
-  const insert = db.prepare(`
-    INSERT INTO cards
-      (id, name, set_name, number, raw_nok, psa10_usd, psa10_pop, total_graded,
-       gem_rate, finn_avg_price, finn_listings_count, last_updated)
-    VALUES
-      (@id, @name, @set, @number, @rawNok, @psa10Usd, @psa10Pop, @totalGraded,
-       @gemRate, @finnAvgPrice, @finnListingsCount, @lastUpdated)
-  `);
-  db.transaction((cards: StoredCard[]) => { for (const c of cards) insert.run(c); })(seedData);
+export async function deleteCardById(id: string): Promise<void> {
+  const { error } = await supabase.from('cards').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function resetCards(seedData: StoredCard[]): Promise<void> {
+  await supabase.from('finn_listings').delete().neq('finn_code', '');
+  await supabase.from('cards').delete().neq('id', '');
+  if (seedData.length > 0) {
+    const { error } = await supabase.from('cards').insert(seedData.map(cardToRow));
+    if (error) throw error;
+  }
 }
 
 // ─── Finn helpers ─────────────────────────────────────────────────────────────
@@ -162,44 +83,58 @@ export interface FinnListing {
   publishedAt: string | null;
 }
 
-export function upsertFinnListings(listings: FinnListing[]): void {
-  const stmt = db.prepare(`
-    INSERT INTO finn_listings (finn_code, card_id, title, price_nok, url, thumbnail, published_at)
-    VALUES (@finnCode, @cardId, @title, @priceNok, @url, @thumbnail, @publishedAt)
-    ON CONFLICT(finn_code) DO UPDATE SET
-      card_id = excluded.card_id,
-      title = excluded.title,
-      price_nok = excluded.price_nok,
-      url = excluded.url,
-      thumbnail = excluded.thumbnail,
-      published_at = excluded.published_at,
-      scraped_at = datetime('now')
-  `);
-  db.transaction((ls: FinnListing[]) => { for (const l of ls) stmt.run(l); })(listings);
+function listingToRow(l: FinnListing): Record<string, unknown> {
+  return {
+    finn_code:    l.finnCode,
+    card_id:      l.cardId,
+    title:        l.title,
+    price_nok:    l.priceNok,
+    url:          l.url,
+    thumbnail:    l.thumbnail,
+    published_at: l.publishedAt,
+  };
 }
 
-export function updateCardFinnStats(cardId: string): void {
-  const rows = db.prepare(
-    'SELECT price_nok FROM finn_listings WHERE card_id = ? AND price_nok IS NOT NULL AND price_nok > 0'
-  ).all(cardId) as { price_nok: number }[];
+export async function upsertFinnListings(listings: FinnListing[]): Promise<void> {
+  if (listings.length === 0) return;
+  const { error } = await supabase
+    .from('finn_listings')
+    .upsert(listings.map(listingToRow), { onConflict: 'finn_code' });
+  if (error) throw error;
+}
 
+export async function updateCardFinnStats(cardId: string): Promise<void> {
+  const { data } = await supabase
+    .from('finn_listings')
+    .select('price_nok')
+    .eq('card_id', cardId)
+    .not('price_nok', 'is', null)
+    .gt('price_nok', 0);
+
+  const rows = (data as { price_nok: number }[] | null) ?? [];
   const count = rows.length;
   const avg = count > 0 ? rows.reduce((s, r) => s + r.price_nok, 0) / count : 0;
 
-  db.prepare(`
-    UPDATE cards SET finn_avg_price = ?, finn_listings_count = ?, last_updated = datetime('now')
-    WHERE id = ?
-  `).run(avg, count, cardId);
+  await supabase.from('cards').update({
+    finn_avg_price:       avg,
+    finn_listings_count:  count,
+    last_updated:         new Date().toISOString(),
+  }).eq('id', cardId);
 }
 
-export function logScrape(type: string, status: string, message: string, cardsUpdated = 0): void {
-  db.prepare('INSERT INTO scrape_log (type, status, message, cards_updated) VALUES (?, ?, ?, ?)').run(
-    type, status, message, cardsUpdated
-  );
+// ─── Scrape log helpers ───────────────────────────────────────────────────────
+
+export async function logScrape(type: string, status: string, message: string, cardsUpdated = 0): Promise<void> {
+  await supabase.from('scrape_log').insert({ type, status, message, cards_updated: cardsUpdated });
 }
 
-export function getLastScrapeLog(): { finn: Record<string, unknown> | null; prices: Record<string, unknown> | null } {
-  const row = (type: string) =>
-    db.prepare("SELECT * FROM scrape_log WHERE type = ? ORDER BY ran_at DESC LIMIT 1").get(type) as Record<string, unknown> | null;
-  return { finn: row('finn'), prices: row('prices') };
+export async function getLastScrapeLog(): Promise<{ finn: Record<string, unknown> | null; prices: Record<string, unknown> | null }> {
+  const [finnResult, pricesResult] = await Promise.all([
+    supabase.from('scrape_log').select('*').eq('type', 'finn').order('ran_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('scrape_log').select('*').eq('type', 'prices').order('ran_at', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  return {
+    finn:   finnResult.data as Record<string, unknown> | null,
+    prices: pricesResult.data as Record<string, unknown> | null,
+  };
 }

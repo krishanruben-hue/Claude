@@ -17,8 +17,8 @@ const router = Router();
 const running = { finn: false, prices: false };
 
 // ── GET /api/scrape/status ────────────────────────────────────────────────────
-router.get('/status', (_req: Request, res: Response) => {
-  res.json({ running, lastRun: getLastScrapeLog() });
+router.get('/status', async (_req: Request, res: Response) => {
+  res.json({ running, lastRun: await getLastScrapeLog() });
 });
 
 // ── POST /api/scrape/finn ─────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ router.post('/finn', async (_req: Request, res: Response) => {
   res.json({ message: 'Finn-scraping startet i bakgrunnen' });
 
   try {
-    const cards = getAllCards().map(c => ({ id: c.id, name: c.name, set: c.set }));
+    const cards = (await getAllCards()).map(c => ({ id: c.id, name: c.name, set: c.set }));
     // Two broad queries cover most PSA-graded Pokemon listings on Finn
     const [batch1, batch2] = await Promise.all([
       scrapeFinn('pokemon PSA 10', 5, cards),
@@ -43,17 +43,17 @@ router.post('/finn', async (_req: Request, res: Response) => {
     const seen = new Set<string>();
     const unique = all.filter(l => { if (seen.has(l.finnCode)) return false; seen.add(l.finnCode); return true; });
 
-    upsertFinnListings(unique);
+    await upsertFinnListings(unique);
 
     // Update finn_avg_price / finn_listings_count per card
     const affectedCardIds = [...new Set(unique.map(l => l.cardId).filter(Boolean) as string[])];
-    for (const id of affectedCardIds) updateCardFinnStats(id);
+    for (const id of affectedCardIds) await updateCardFinnStats(id);
 
-    logScrape('finn', 'ok', `Hentet ${unique.length} annonser, oppdaterte ${affectedCardIds.length} kort`, affectedCardIds.length);
+    await logScrape('finn', 'ok', `Hentet ${unique.length} annonser, oppdaterte ${affectedCardIds.length} kort`, affectedCardIds.length);
     console.log(`[Finn] ${unique.length} annonser, ${affectedCardIds.length} kort oppdatert`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logScrape('finn', 'error', msg);
+    await logScrape('finn', 'error', msg);
     console.error('[Finn] Feil:', msg);
   } finally {
     running.finn = false;
@@ -70,7 +70,7 @@ router.post('/prices', async (_req: Request, res: Response) => {
   res.json({ message: 'eBay-prisscraping startet i bakgrunnen (tar ~5–10 min for alle kort)' });
 
   try {
-    const cards = getAllCards();
+    const cards = await getAllCards();
     let updated = 0;
 
     const results = await scrapeAllPrices(cards, (done, total) => {
@@ -80,16 +80,16 @@ router.post('/prices', async (_req: Request, res: Response) => {
     for (const [id, price] of results) {
       const card = cards.find(c => c.id === id);
       if (card) {
-        upsertCard({ ...card, psa10Usd: price, lastUpdated: new Date().toISOString() });
+        await upsertCard({ ...card, psa10Usd: price, lastUpdated: new Date().toISOString() });
         updated++;
       }
     }
 
-    logScrape('prices', 'ok', `Oppdaterte PSA10 USD for ${updated} kort`, updated);
+    await logScrape('prices', 'ok', `Oppdaterte PSA10 USD for ${updated} kort`, updated);
     console.log(`[eBay] Ferdig – ${updated} kort oppdatert`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logScrape('prices', 'error', msg);
+    await logScrape('prices', 'error', msg);
     console.error('[eBay] Feil:', msg);
   } finally {
     running.prices = false;
