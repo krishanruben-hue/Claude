@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "build": "cd ../frontend && npm install && npm run build",
     "start": "node index.js",
     "dev": "node --watch index.js",
     "import-cards": "node db/import-cards.js"

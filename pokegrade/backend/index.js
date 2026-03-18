@@ -1,9 +1,13 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import cardsRouter from './routes/cards.js';
 import adminRouter from './routes/admin.js';
 import { startScheduler } from './jobs/scheduler.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +20,12 @@ app.use('/api/admin', adminRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+const distPath = join(__dirname, '../frontend/dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
