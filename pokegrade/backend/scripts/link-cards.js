@@ -11,16 +11,23 @@ function cleanName(name) {
     .trim();
 }
 
-async function searchCard(name, setName, cardNumber) {
+async function searchCard(name, setName, cardNumber, retries = 3) {
   const params = new URLSearchParams({ name: cleanName(name) });
   if (setName) params.set('set', setName);
   if (cardNumber) params.set('number', cardNumber);
-  const res = await axios.get(`https://${RAPIDAPI_HOST}/cards?${params}`, {
-    headers: { 'x-rapidapi-key': process.env.POKEMON_API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST },
-    timeout: 20000,
-  });
-  const items = res.data?.data ?? res.data ?? [];
-  return Array.isArray(items) ? items.map(c => ({ id: c.id, name: c.name })) : [];
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await axios.get(`https://${RAPIDAPI_HOST}/cards?${params}`, {
+        headers: { 'x-rapidapi-key': process.env.POKEMON_API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST },
+        timeout: 5000,
+      });
+      const items = res.data?.data ?? res.data ?? [];
+      return Array.isArray(items) ? items.map(c => ({ id: c.id, name: c.name })) : [];
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, attempt * 500));
+    }
+  }
 }
 
 const setFilter = process.argv[2];
@@ -32,8 +39,9 @@ const { data: cards } = await query;
 console.log(`Kobler ${cards.length} kort${setFilter ? ` i "${setFilter}"` : ''}...`);
 
 let linked = 0, errors = 0;
+const CONCURRENCY = 10;
 
-for (const card of cards) {
+async function processCard(card) {
   try {
     const results = await searchCard(card.name, card.set_name, card.set_number);
     if (results.length === 0) {
@@ -49,7 +57,11 @@ for (const card of cards) {
     console.log(`  ✗ Feil for ${card.name}: ${err.message}`);
     errors++;
   }
-  await new Promise(r => setTimeout(r, 150));
+}
+
+for (let i = 0; i < cards.length; i += CONCURRENCY) {
+  const batch = cards.slice(i, i + CONCURRENCY);
+  await Promise.allSettled(batch.map(processCard));
 }
 
 console.log(`\nFerdig: ${linked} koblet, ${errors} feil`);
