@@ -45,6 +45,17 @@ router.post('/auto-link-cards', async (req, res) => {
   }
 });
 
+router.get('/link-progress', async (req, res) => {
+  if (isMockMode) return res.json({ linked: 0, remaining: 0, total: 0 });
+  try {
+    const { count: total } = await supabase.from('cards').select('*', { count: 'exact', head: true });
+    const { count: remaining } = await supabase.from('cards').select('*', { count: 'exact', head: true }).is('pokemon_api_id', null);
+    res.json({ linked: total - remaining, remaining, total });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/refresh-finn/:cardId', async (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   const { cardId } = req.params;
