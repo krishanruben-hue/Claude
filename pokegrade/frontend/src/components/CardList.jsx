@@ -12,7 +12,7 @@ const COLS = [
   { key: 'finn_count', label: 'Finn.no', align: 'right' },
 ];
 
-export default function CardList({ cards, onCardClick }) {
+export default function CardList({ cards, onCardClick, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   const [sort, setSort] = useState({ key: 'roi', dir: 'desc' });
 
   function toggleSort(key) {
@@ -50,18 +50,26 @@ export default function CardList({ cards, onCardClick }) {
                 )}
               </th>
             ))}
+            <th className="px-2 py-3 w-8" />
           </tr>
         </thead>
         <tbody className="bg-pg-bg">
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                 Ingen kort matcher aktive filtre
               </td>
             </tr>
           ) : (
             sorted.map(card => (
-              <CardRow key={card.id} card={card} onClick={onCardClick} />
+              <CardRow
+                key={card.id}
+                card={card}
+                onClick={onCardClick}
+                watchlists={watchlists}
+                onToggleWatchlist={onToggleWatchlist}
+                onCreateWatchlist={onCreateWatchlist}
+              />
             ))
           )}
         </tbody>

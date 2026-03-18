@@ -4,6 +4,8 @@ import CardList from './components/CardList.jsx';
 import FilterPanel from './components/FilterPanel.jsx';
 import CardDetail from './components/CardDetail.jsx';
 import BudgetSimulator from './components/BudgetSimulator.jsx';
+import WatchlistManager from './components/WatchlistManager.jsx';
+import { useWatchlists } from './hooks/useWatchlists.js';
 
 const INITIAL_FILTERS = {
   gem_rate: null,
@@ -15,6 +17,7 @@ const INITIAL_FILTERS = {
   finn_deviation: null,
   search: null,
   set: null,
+  watchlist: null,
 };
 
 function applyFilters(cards, filters) {
@@ -25,6 +28,7 @@ function applyFilters(cards, filters) {
       if (!haystack.includes(q)) return false;
     }
     if (filters.set && card.set_name !== filters.set) return false;
+    if (filters.watchlist && !filters.watchlist.cardIds.includes(card.id)) return false;
     if (filters.gem_rate != null && (card.gem_rate ?? -Infinity) < filters.gem_rate) return false;
     if (filters.multiplier != null && (card.multiplier ?? -Infinity) < filters.multiplier) return false;
     if (filters.roi != null && (card.roi ?? -Infinity) < filters.roi) return false;
@@ -43,9 +47,18 @@ export default function App() {
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [showBudget, setShowBudget] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showWatchlistManager, setShowWatchlistManager] = useState(false);
   const [adminStatus, setAdminStatus] = useState('');
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
+
+  const {
+    watchlists,
+    createWatchlist,
+    deleteWatchlist,
+    renameWatchlist,
+    toggleCardInWatchlist,
+  } = useWatchlists();
 
   useEffect(() => {
     api.getCards()
@@ -104,6 +117,12 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowWatchlistManager(true)}
+              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+            >
+              ★ Watchlister {watchlists.length > 0 && <span className="ml-1 text-pg-accent">{watchlists.length}</span>}
+            </button>
+            <button
               onClick={() => setShowBudget(true)}
               className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
             >
@@ -148,6 +167,30 @@ export default function App() {
         )}
       </header>
 
+      {/* Watchlist-filterlinje */}
+      {watchlists.length > 0 && (
+        <div className="border-b border-pg-border bg-pg-card/50 px-4 py-2">
+          <div className="max-w-screen-xl mx-auto flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 mr-1">Watchliste:</span>
+            <button
+              onClick={() => handleFilterChange('watchlist', null)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${!filters.watchlist ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
+            >
+              Alle
+            </button>
+            {watchlists.map(w => (
+              <button
+                key={w.id}
+                onClick={() => handleFilterChange('watchlist', filters.watchlist?.id === w.id ? null : w)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filters.watchlist?.id === w.id ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
+              >
+                ★ {w.name} <span className="text-gray-500 ml-1">{w.cardIds.length}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Hovedinnhold */}
       <main className="max-w-screen-xl mx-auto px-4 py-5">
         {loading && (
@@ -168,17 +211,38 @@ export default function App() {
               activeCount={activeFilterCount}
               allSets={allSets}
             />
-            <CardList cards={filtered} onCardClick={c => setSelectedCardId(c.id)} />
+            <CardList
+              cards={filtered}
+              onCardClick={c => setSelectedCardId(c.id)}
+              watchlists={watchlists}
+              onToggleWatchlist={toggleCardInWatchlist}
+              onCreateWatchlist={createWatchlist}
+            />
           </>
         )}
       </main>
 
       {/* Modaler */}
       {selectedCardId && (
-        <CardDetail cardId={selectedCardId} onClose={() => setSelectedCardId(null)} />
+        <CardDetail
+          cardId={selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+          watchlists={watchlists}
+          onToggleWatchlist={toggleCardInWatchlist}
+          onCreateWatchlist={createWatchlist}
+        />
       )}
       {showBudget && (
         <BudgetSimulator cards={cards} onClose={() => setShowBudget(false)} />
+      )}
+      {showWatchlistManager && (
+        <WatchlistManager
+          watchlists={watchlists}
+          onCreate={createWatchlist}
+          onDelete={deleteWatchlist}
+          onRename={renameWatchlist}
+          onClose={() => setShowWatchlistManager(false)}
+        />
       )}
     </div>
   );

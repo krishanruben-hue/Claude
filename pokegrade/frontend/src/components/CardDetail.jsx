@@ -4,6 +4,7 @@ import { fmtNok, fmtUsd, fmtPct, fmtMultiplier, fmtNumber, roiColor } from '../u
 import { calculateGradingCost, calculateROI } from '../utils/calculations.js';
 import { getCardImageUrlHires } from '../utils/cardImages.js';
 import FinnListings from './FinnListings.jsx';
+import WatchlistPopover from './WatchlistPopover.jsx';
 
 function MetricBox({ label, value, sub, color }) {
   return (
@@ -15,7 +16,7 @@ function MetricBox({ label, value, sub, color }) {
   );
 }
 
-export default function CardDetail({ cardId, onClose }) {
+export default function CardDetail({ cardId, onClose, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [batchSize, setBatchSize] = useState(10);
@@ -75,8 +76,9 @@ export default function CardDetail({ cardId, onClose }) {
         <div className="p-5 space-y-5">
           {/* Kortbilde + nøkkeltall side ved side */}
           <div className="flex gap-5 items-start">
-            {/* Kortbilde */}
-            <div className="shrink-0 w-36 rounded-xl overflow-hidden bg-pg-border shadow-lg">
+            {/* Kortbilde + watchlist */}
+            <div className="shrink-0 flex flex-col items-center gap-2">
+              <div className="w-36 rounded-xl overflow-hidden bg-pg-border shadow-lg">
               {hiresUrl && !imgError ? (
                 <img
                   src={hiresUrl}
@@ -87,6 +89,23 @@ export default function CardDetail({ cardId, onClose }) {
               ) : (
                 <div className="w-full aspect-[2.5/3.5] flex items-center justify-center text-4xl bg-pg-bg rounded-xl">
                   🎴
+                </div>
+              )}
+              </div>
+              {/* Watchlist-knapp under bildet */}
+              <WatchlistPopover
+                cardId={card.id}
+                watchlists={watchlists || []}
+                onToggle={onToggleWatchlist || (() => {})}
+                onCreate={onCreateWatchlist || (() => {})}
+              />
+              {(watchlists || []).filter(w => w.cardIds.includes(card.id)).length > 0 && (
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {(watchlists || []).filter(w => w.cardIds.includes(card.id)).map(w => (
+                    <span key={w.id} className="text-xs bg-pg-accent/20 text-pg-accent px-2 py-0.5 rounded-full border border-pg-accent/30">
+                      {w.name}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { fmtNok, fmtUsd, fmtPct, fmtMultiplier, fmtNumber, roiColor } from '../utils/format.js';
 import { getCardImageUrl } from '../utils/cardImages.js';
+import WatchlistPopover from './WatchlistPopover.jsx';
 
-export default function CardRow({ card, onClick }) {
+export default function CardRow({ card, onClick, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   const roiCls = roiColor(card.roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
   const imgUrl = getCardImageUrl(card.set_name, card.set_number);
@@ -69,6 +70,14 @@ export default function CardRow({ card, onClick }) {
         ) : (
           <span className="text-xs text-gray-600">–</span>
         )}
+      </td>
+      <td className="px-2 py-3">
+        <WatchlistPopover
+          cardId={card.id}
+          watchlists={watchlists}
+          onToggle={onToggleWatchlist}
+          onCreate={onCreateWatchlist}
+        />
       </td>
     </tr>
   );
