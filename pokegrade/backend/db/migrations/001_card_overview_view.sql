@@ -12,7 +12,7 @@ SELECT
   c.rarity,
   c.supertype,
   c.image_url,
-  c.pricecharting_id,
+  c.pokemon_api_id,
   c.created_at,
   -- Numerisk versjon av kortnummer for sortering (f.eks. "101" -> 101, "TG01" -> 1)
   NULLIF(regexp_replace(c.set_number, '[^0-9]', '', 'g'), '')::integer AS set_number_int,

@@ -31,6 +31,8 @@ export const api = {
     return get(`/cards${q ? `?${q}` : ''}`);
   },
   getCard: (id) => get(`/cards/${id}`),
+  autoLinkCards: () => post('/admin/auto-link-cards'),
+  getLinkProgress: () => get('/admin/link-progress'),
   refreshPrices: () => post('/admin/refresh-prices'),
   refreshPsa: () => post('/admin/refresh-psa'),
   refreshFinn: () => post('/admin/refresh-finn'),

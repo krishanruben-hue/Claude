@@ -10,7 +10,7 @@ create table if not exists cards (
   supertype text,
   rarity text,
   image_url text,
-  pricecharting_id text,
+  pokemon_api_id text,
   created_at timestamptz default now()
 );
 
@@ -19,6 +19,8 @@ create table if not exists cards (
 -- alter table cards add column if not exists supertype text;
 -- alter table cards add column if not exists rarity text;
 -- alter table cards add column if not exists image_url text;
+-- Migrasjon fra Pricecharting:
+-- alter table cards rename column pricecharting_id to pokemon_api_id;
 
 create table if not exists price_snapshots (
   id uuid primary key default gen_random_uuid(),
