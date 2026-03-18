@@ -106,7 +106,14 @@ export default function App() {
   }, [filters.search, filters.set, filters.rarity, sort]); // eslint-disable-line
 
   function handleFilterChange(key, value) {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    if (key === 'search') {
+      clearTimeout(searchTimer.current);
+      searchTimer.current = setTimeout(() => {
+        setFilters(prev => ({ ...prev, search: value }));
+      }, 350);
+    } else {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);

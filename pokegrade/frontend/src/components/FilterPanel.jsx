@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const numericFilters = [
   { key: 'gem_rate', label: 'Gem rate ≥', unit: '%', pct: true },
@@ -13,6 +13,13 @@ const numericFilters = [
 const ALL_SETS = 'Alle sett';
 
 export default function FilterPanel({ values, onChange, activeCount, allSets }) {
+  const [searchText, setSearchText] = useState(values.search || '');
+
+  // Synkroniser hvis parent nullstiller (f.eks. reset)
+  React.useEffect(() => {
+    if (!values.search) setSearchText('');
+  }, [values.search]);
+
   function reset() {
     numericFilters.forEach(f => onChange(f.key, null));
     onChange('search', null);
@@ -42,8 +49,11 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-sm">🔍</span>
           <input
             type="text"
-            value={values.search || ''}
-            onChange={e => onChange('search', e.target.value || null)}
+            value={searchText}
+            onChange={e => {
+              setSearchText(e.target.value);
+              onChange('search', e.target.value || null);
+            }}
             placeholder="Søk på kortnavn..."
             className={`w-full bg-pg-bg border rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-pg-accent transition-colors ${values.search ? 'border-pg-accent' : 'border-pg-border'}`}
           />
