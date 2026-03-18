@@ -4,7 +4,8 @@
   "description": "Pokerade backend – priser, PSA-data og Finn.no-scraping",
   "scripts": {
     "start": "tsx src/server.ts",
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "import-cards": "tsx src/scripts/import-cards.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
