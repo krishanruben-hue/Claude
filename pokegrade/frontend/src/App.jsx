@@ -134,7 +134,10 @@ export default function App() {
     setAdminStatus(`${label}...`);
     try {
       const res = await action();
-      setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${res.refreshed} oppdatert`);
+      const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
+      const errCount = res.errors?.length ?? 0;
+      const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
+      setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
       if (!res.mock) fetchCards(page, filters);
     } catch (err) {
       setAdminStatus(`Feil: ${err.message}`);
