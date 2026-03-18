@@ -26,15 +26,12 @@ if [ ! -d "frontend/node_modules" ]; then
   cd frontend && npm install && cd ..
 fi
 
-# Lag .env om den ikke finnes
-if [ ! -f "backend/.env" ]; then
-  cp backend/.env.example backend/.env
-  echo ""
-  echo "MERK: backend/.env ble opprettet fra .env.example"
-  echo "Appen kjorer i DEMO-MODUS med eksempeldata."
-  echo "Legg inn API-noekler i backend/.env for live-data."
-  echo ""
-fi
+# Lag .env med Supabase-noekler
+cat > backend/.env << 'EOF'
+SUPABASE_URL=https://dejgztmnfstkucpnwfkf.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlamd6dG1uZnN0a3VjcG53ZmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MzA2NDksImV4cCI6MjA4OTQwNjY0OX0.xRVWpFwks6Gw1YvZgnA2IQWfZoLtPcsi1imjVdWTf8g
+PORT=3001
+EOF
 
 echo ""
 echo "Starter backend pa port 3001..."
