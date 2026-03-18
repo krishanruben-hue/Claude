@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client.js';
 import { fmtNok, fmtUsd, fmtPct, fmtMultiplier, fmtNumber, roiColor } from '../utils/format.js';
-import { calculateGradingCost, calculateROI } from '../utils/calculations.js';
 import { getCardImageUrlHires } from '../utils/cardImages.js';
 import FinnListings from './FinnListings.jsx';
 import WatchlistPopover from './WatchlistPopover.jsx';
@@ -19,8 +18,6 @@ function MetricBox({ label, value, sub, color }) {
 export default function CardDetail({ cardId, onClose, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [batchSize, setBatchSize] = useState(10);
-  const [customGradingCost, setCustomGradingCost] = useState(null);
   const [refreshingFinn, setRefreshingFinn] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -51,8 +48,7 @@ export default function CardDetail({ cardId, onClose, watchlists, onToggleWatchl
 
   if (!card) return null;
 
-  const gradingCost = customGradingCost ?? calculateGradingCost(batchSize);
-  const roi = card.raw_usd ? calculateROI(card.psa10_usd, card.raw_usd, gradingCost) : card.roi;
+  const roi = card.roi;
   const roiCls = roiColor(roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
   const popTable = card.psa_population_table || {};
@@ -125,44 +121,9 @@ export default function CardDetail({ cardId, onClose, watchlists, onToggleWatchl
                 <MetricBox label="PSA 10-pris" value={fmtNok(card.psa10_nok)} sub={fmtUsd(card.psa10_usd)} />
                 <MetricBox label="Multiplier" value={fmtMultiplier(card.multiplier)} color="text-violet-300" />
                 <MetricBox label="Gem rate" value={gemPct != null ? `${gemPct}%` : '–'} color={card.low_data_warning ? 'text-yellow-400' : 'text-white'} />
+                <MetricBox label="ROI (PSA 10)" value={fmtPct(roi)} color={roiCls} />
               </div>
             </div>
-          </div>
-
-          {/* Graderingskost-kalkulator */}
-          <div className="bg-pg-bg border border-pg-border rounded-xl p-4">
-            <div className="text-sm font-semibold text-gray-300 mb-3">Graderingskalkulator</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-3">
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Batch-størrelse</label>
-                <input
-                  type="number"
-                  value={batchSize}
-                  min={1}
-                  onChange={e => { setBatchSize(parseInt(e.target.value) || 1); setCustomGradingCost(null); }}
-                  className="w-full bg-pg-card border border-pg-border rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-pg-accent"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Graderingskost/kort (USD)</label>
-                <input
-                  type="number"
-                  value={customGradingCost ?? gradingCost.toFixed(2)}
-                  onChange={e => setCustomGradingCost(parseFloat(e.target.value) || null)}
-                  className="w-full bg-pg-card border border-pg-border rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-pg-accent"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">ROI (PSA 10)</label>
-                <div className={`text-xl font-bold pt-1 ${roiCls}`}>{fmtPct(roi)}</div>
-              </div>
-            </div>
-            {card.break_even_grade && (
-              <div className="text-sm text-gray-400">
-                Break-even grade: <span className="text-white font-semibold">PSA {card.break_even_grade}</span>
-                <span className="text-gray-500 ml-2 text-xs">(laveste grade med positiv ROI)</span>
-              </div>
-            )}
           </div>
 
           {/* PSA Population tabell */}

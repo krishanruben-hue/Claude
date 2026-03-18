@@ -4,7 +4,6 @@ import CardList from './components/CardList.jsx';
 import { CardGrid, CardIconView } from './components/CardGrid.jsx';
 import FilterPanel from './components/FilterPanel.jsx';
 import CardDetail from './components/CardDetail.jsx';
-import BudgetSimulator from './components/BudgetSimulator.jsx';
 import WatchlistManager from './components/WatchlistManager.jsx';
 import { useWatchlists } from './hooks/useWatchlists.js';
 
@@ -50,7 +49,6 @@ export default function App() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [selectedCardId, setSelectedCardId] = useState(null);
-  const [showBudget, setShowBudget] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showWatchlistManager, setShowWatchlistManager] = useState(false);
   const [adminStatus, setAdminStatus] = useState('');
@@ -187,12 +185,6 @@ export default function App() {
               className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
             >
               ★ Watchlister {watchlists.length > 0 && <span className="ml-1 text-pg-accent">{watchlists.length}</span>}
-            </button>
-            <button
-              onClick={() => setShowBudget(true)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
-            >
-              Budsjett
             </button>
             <button
               onClick={() => setShowAdmin(prev => !prev)}
@@ -404,9 +396,6 @@ export default function App() {
           onToggleWatchlist={toggleCardInWatchlist}
           onCreateWatchlist={createWatchlist}
         />
-      )}
-      {showBudget && (
-        <BudgetSimulator cards={cards} onClose={() => setShowBudget(false)} />
       )}
       {showWatchlistManager && (
         <WatchlistManager
