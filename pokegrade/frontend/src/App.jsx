@@ -194,7 +194,13 @@ export default function App() {
           <div className="border-t border-pg-border bg-pg-bg px-4 py-3">
             <div className="max-w-screen-xl mx-auto flex items-center gap-3 flex-wrap">
               <button
-                onClick={() => adminAction(api.refreshPrices, 'Oppdaterer Pricecharting')}
+                onClick={() => adminAction(api.autoLinkCards, 'Kobler API-IDer')}
+                className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
+              >
+                Koble API-IDer
+              </button>
+              <button
+                onClick={() => adminAction(api.refreshPrices, 'Oppdaterer priser')}
                 className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
               >
                 Oppdater priser

@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { supabase, isMockMode } from '../db/supabase.js';
-import { fetchPrices } from '../services/pokemonapi.js';
+import { fetchPrices, searchCards } from '../services/pokemonapi.js';
 import { scrapePsaPopulation } from '../scrapers/psa.js';
 import { scrapeFinnListings } from '../scrapers/finn.js';
 import { backfillMissingFxRates } from '../services/exchangerate.js';
@@ -94,6 +94,37 @@ export async function refreshAllFinnData() {
   }
 
   return { refreshed, errors };
+}
+
+// Auto-kobler pokemon_api_id for alle kort som mangler det, ved å søke i RapidAPI
+export async function autoLinkCardIds() {
+  if (!supabase) return { linked: 0, errors: [] };
+  const { data: cards } = await supabase
+    .from('cards')
+    .select('id, name, set_name')
+    .is('pokemon_api_id', null);
+
+  const errors = [];
+  let linked = 0;
+
+  for (const card of cards || []) {
+    try {
+      const results = await searchCards(card.name, card.set_name);
+      if (results.length === 0) {
+        errors.push({ card: card.name, error: 'Ingen treff i API' });
+      } else {
+        // Velg beste treff: eksakt navnematch, ellers første
+        const match = results.find(r => r.name.toLowerCase() === card.name.toLowerCase()) ?? results[0];
+        await supabase.from('cards').update({ pokemon_api_id: match.id }).eq('id', card.id);
+        linked++;
+      }
+    } catch (err) {
+      errors.push({ card: card.name, error: err.message });
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  return { linked, errors };
 }
 
 export async function refreshFinnForCard(cardId, cardName) {

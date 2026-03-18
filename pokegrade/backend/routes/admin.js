@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
-import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard } from '../jobs/scheduler.js';
+import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
 
 const router = Router();
@@ -29,6 +29,16 @@ router.post('/refresh-finn', async (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   try {
     const result = await refreshAllFinnData();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/auto-link-cards', async (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  try {
+    const result = await autoLinkCardIds();
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
