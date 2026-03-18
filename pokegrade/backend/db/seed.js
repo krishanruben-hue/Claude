@@ -27,7 +27,7 @@ if (!supabase) {
   process.exit(1);
 }
 
-const { error } = await supabase.from('cards').upsert(cards, { onConflict: 'name,set_name' });
+const { error } = await supabase.from('cards').insert(cards);
 if (error) {
   console.error('Seed-feil:', error);
 } else {
