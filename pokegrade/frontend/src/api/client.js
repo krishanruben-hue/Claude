@@ -20,11 +20,13 @@ export const api = {
   getSets: () => get('/cards/sets'),
   getCards: (params = {}) => {
     const qs = new URLSearchParams();
-    if (params.page)   qs.set('page',   params.page);
-    if (params.limit)  qs.set('limit',  params.limit);
-    if (params.q)      qs.set('q',      params.q);
-    if (params.set)    qs.set('set',    params.set);
-    if (params.rarity) qs.set('rarity', params.rarity);
+    if (params.page)     qs.set('page',     params.page);
+    if (params.limit)    qs.set('limit',    params.limit);
+    if (params.q)        qs.set('q',        params.q);
+    if (params.set)      qs.set('set',      params.set);
+    if (params.rarity)   qs.set('rarity',   params.rarity);
+    if (params.sort_by)  qs.set('sort_by',  params.sort_by);
+    if (params.sort_dir) qs.set('sort_dir', params.sort_dir);
     const q = qs.toString();
     return get(`/cards${q ? `?${q}` : ''}`);
   },

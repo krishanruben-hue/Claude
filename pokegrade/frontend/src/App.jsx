@@ -65,7 +65,7 @@ export default function App() {
     toggleCardInWatchlist,
   } = useWatchlists();
 
-  const fetchCards = useCallback((currentPage, currentFilters) => {
+  const fetchCards = useCallback((currentPage, currentFilters, currentSort) => {
     setLoading(true);
     api.getCards({
       page: currentPage,
@@ -73,6 +73,8 @@ export default function App() {
       q: currentFilters.search || '',
       set: currentFilters.set || '',
       rarity: currentFilters.rarity || '',
+      sort_by:  currentSort?.key  || 'name',
+      sort_dir: currentSort?.dir  || 'asc',
     })
       .then(res => {
         setCards(res.cards || []);
@@ -94,43 +96,22 @@ export default function App() {
 
   // Refetch når side endres
   useEffect(() => {
-    fetchCards(page, filters);
+    fetchCards(page, filters, sort);
   }, [page]); // eslint-disable-line
 
-  // Refetch fra side 1 når server-side filtre endres
+  // Refetch fra side 1 når server-side filtre eller sort endres
   useEffect(() => {
     setPage(1);
-    fetchCards(1, filters);
-  }, [filters.search, filters.set, filters.rarity]); // eslint-disable-line
+    fetchCards(1, filters, sort);
+  }, [filters.search, filters.set, filters.rarity, sort]); // eslint-disable-line
 
   function handleFilterChange(key, value) {
     setFilters(prev => ({ ...prev, [key]: value }));
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  // Klient-side filtre (gem_rate, multiplier, roi osv. beregnes på backend og returneres)
   const filtered = useMemo(() => applyClientFilters(cards, filters), [cards, filters]);
-
-  const sortedFiltered = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let av = a[sort.key];
-      let bv = b[sort.key];
-      // null/undefined sist
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      // Nummer-sortering for kortnummer (kan være "101", "TG01", osv.)
-      if (sort.key === 'set_number') {
-        const an = parseInt(av, 10);
-        const bn = parseInt(bv, 10);
-        if (!isNaN(an) && !isNaN(bn)) { av = an; bv = bn; }
-      }
-      if (typeof av === 'string') av = av.toLowerCase();
-      if (typeof bv === 'string') bv = bv.toLowerCase();
-      if (av < bv) return sort.dir === 'asc' ? -1 : 1;
-      if (av > bv) return sort.dir === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filtered, sort]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
   async function adminAction(action, label) {
@@ -324,7 +305,7 @@ export default function App() {
             </div>
             {view === 'list' && (
               <CardList
-                cards={sortedFiltered}
+                cards={filtered}
                 sort={sort}
                 onSortChange={setSort}
                 onCardClick={c => setSelectedCardId(c.id)}
@@ -335,7 +316,7 @@ export default function App() {
             )}
             {view === 'grid' && (
               <CardGrid
-                cards={sortedFiltered}
+                cards={filtered}
                 onCardClick={c => setSelectedCardId(c.id)}
                 watchlists={watchlists}
                 onToggleWatchlist={toggleCardInWatchlist}
@@ -344,7 +325,7 @@ export default function App() {
             )}
             {view === 'icon' && (
               <CardIconView
-                cards={sortedFiltered}
+                cards={filtered}
                 onCardClick={c => setSelectedCardId(c.id)}
               />
             )}

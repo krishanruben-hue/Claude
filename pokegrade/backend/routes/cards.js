@@ -108,7 +108,19 @@ router.get('/sets', (_req, res) => {
   res.json(sets);
 });
 
-// GET /api/cards?page=1&limit=50&q=charizard&set=swsh1&rarity=SIR
+// Tillatte sort-kolonner (whitelist mot SQL-injeksjon)
+const SORT_COLUMNS = {
+  name:       { col: 'name',           nullsLast: true },
+  set_number: { col: 'set_number_int', nullsLast: true },
+  raw_nok:    { col: 'raw_usd',        nullsLast: true },
+  psa10_nok:  { col: 'psa10_usd',      nullsLast: true },
+  multiplier: { col: 'multiplier',     nullsLast: true },
+  gem_rate:   { col: 'gem_rate',       nullsLast: true },
+  roi:        { col: 'roi',            nullsLast: true },
+  psa10_pop:  { col: 'psa10_pop',      nullsLast: true },
+};
+
+// GET /api/cards?page=1&limit=50&q=charizard&set=swsh1&rarity=SIR&sort_by=roi&sort_dir=desc
 router.get('/', async (req, res) => {
   try {
     const fxRate = isMockMode ? MOCK_FX_RATE : await getLatestFxRate();
@@ -122,19 +134,24 @@ router.get('/', async (req, res) => {
       return res.json({ cards, total: cards.length, mock: true, fx_rate: fxRate });
     }
 
-    const page  = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit = Math.min(200, parseInt(req.query.limit) || 50);
-    const from  = (page - 1) * limit;
-    const q     = req.query.q?.trim() || '';
-    const set   = req.query.set?.trim() || '';
-    const rarity = req.query.rarity?.trim() || '';
+    const page    = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit   = Math.min(200, parseInt(req.query.limit) || 50);
+    const from    = (page - 1) * limit;
+    const q       = req.query.q?.trim() || '';
+    const set     = req.query.set?.trim() || '';
+    const rarity  = req.query.rarity?.trim() || '';
+    const sortKey = req.query.sort_by || 'name';
+    const sortDir = req.query.sort_dir === 'asc' ? 'asc' : 'desc';
+    const sortCfg = SORT_COLUMNS[sortKey] || SORT_COLUMNS.name;
 
-    // Bygg kortspørring med filtre
-    let query = supabase.from('cards').select('*', { count: 'exact' });
+    // Spørring mot card_overview-view (inkluderer pre-beregnede metrics + LATERAL JOINs)
+    let query = supabase.from('card_overview').select('*', { count: 'exact' });
     if (q)      query = query.ilike('name', `%${q}%`);
     if (set)    query = query.eq('set_id', set);
     if (rarity) query = query.eq('rarity', rarity);
-    query = query.order('name').range(from, from + limit - 1);
+    query = query
+      .order(sortCfg.col, { ascending: sortDir === 'asc', nullsFirst: false })
+      .range(from, from + limit - 1);
 
     const { data: cards, error, count } = await query;
     if (error) return res.status(500).json({ error: error.message });
@@ -142,31 +159,7 @@ router.get('/', async (req, res) => {
 
     const ids = cards.map(c => c.id);
 
-    // Batch-hent siste snapshot per kort (én spørring)
-    const { data: snapshots } = await supabase
-      .from('price_snapshots')
-      .select('card_id, raw_usd, psa9_usd, psa10_usd, date')
-      .in('card_id', ids)
-      .order('date', { ascending: false });
-
-    const latestSnapshot = {};
-    for (const s of snapshots || []) {
-      if (!latestSnapshot[s.card_id]) latestSnapshot[s.card_id] = s;
-    }
-
-    // Batch-hent siste PSA-pop per kort (én spørring)
-    const { data: pops } = await supabase
-      .from('psa_population')
-      .select('*')
-      .in('card_id', ids)
-      .order('fetched_at', { ascending: false });
-
-    const latestPop = {};
-    for (const p of pops || []) {
-      if (!latestPop[p.card_id]) latestPop[p.card_id] = p;
-    }
-
-    // Batch-hent Finn-annonser siste 2 timer (én spørring)
+    // Finn-annonser siste 2 timer (kan ikke pre-beregnes i view effektivt)
     const twoHoursAgo = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
     const { data: finnRows } = await supabase
       .from('finn_listings')
@@ -181,19 +174,17 @@ router.get('/', async (req, res) => {
       finnByCard[f.card_id].push(f.price_nok);
     }
 
+    // Beregn NOK-verdier og finn-stats (ROI/gem_rate/multiplier kommer fra view)
     const enriched = cards.map(card => {
-      const snapshot  = latestSnapshot[card.id] || {};
-      const pop       = latestPop[card.id] || {};
       const finnPrices = (finnByCard[card.id] || []).filter(Boolean);
-      const merged = {
+      return {
         ...card,
-        ...snapshot,
-        ...pop,
+        ...computeMetrics(card, fxRate),
         finn_count:   finnPrices.length,
         finn_min_nok: finnPrices.length ? Math.min(...finnPrices) : null,
         finn_max_nok: finnPrices.length ? Math.max(...finnPrices) : null,
+        fx_rate: fxRate,
       };
-      return { ...merged, ...computeMetrics(merged, fxRate), fx_rate: fxRate };
     });
 
     res.json({ cards: enriched, total: count, page, limit, mock: false, fx_rate: fxRate });
