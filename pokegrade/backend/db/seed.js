@@ -3,23 +3,25 @@ import { supabase } from './supabase.js';
 
 const cards = [
   // Prismatic Evolutions
-  { name: 'Umbreon ex SIR', set_name: 'Prismatic Evolutions', set_number: '161', pricecharting_id: 'umbreon-ex-161-prismatic-evolutions' },
-  { name: 'Espeon ex SIR', set_name: 'Prismatic Evolutions', set_number: '162', pricecharting_id: 'espeon-ex-162-prismatic-evolutions' },
-  { name: 'Sylveon ex SIR', set_name: 'Prismatic Evolutions', set_number: '163', pricecharting_id: 'sylveon-ex-163-prismatic-evolutions' },
-  { name: 'Flareon ex SIR', set_name: 'Prismatic Evolutions', set_number: '159', pricecharting_id: 'flareon-ex-159-prismatic-evolutions' },
-  { name: 'Vaporeon ex SIR', set_name: 'Prismatic Evolutions', set_number: '160', pricecharting_id: 'vaporeon-ex-160-prismatic-evolutions' },
-  { name: 'Jolteon ex SIR', set_name: 'Prismatic Evolutions', set_number: '157', pricecharting_id: 'jolteon-ex-157-prismatic-evolutions' },
+  // pokemon_api_id = kortets ID fra pokemon-api.com (finn via GET /cards?name=... eller søk i docs)
+  // Prismatic Evolutions
+  { name: 'Umbreon ex SIR', set_name: 'Prismatic Evolutions', set_number: '161', pokemon_api_id: null },
+  { name: 'Espeon ex SIR', set_name: 'Prismatic Evolutions', set_number: '162', pokemon_api_id: null },
+  { name: 'Sylveon ex SIR', set_name: 'Prismatic Evolutions', set_number: '163', pokemon_api_id: null },
+  { name: 'Flareon ex SIR', set_name: 'Prismatic Evolutions', set_number: '159', pokemon_api_id: null },
+  { name: 'Vaporeon ex SIR', set_name: 'Prismatic Evolutions', set_number: '160', pokemon_api_id: null },
+  { name: 'Jolteon ex SIR', set_name: 'Prismatic Evolutions', set_number: '157', pokemon_api_id: null },
   // Evolving Skies
-  { name: 'Umbreon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '215', pricecharting_id: 'umbreon-vmax-215-evolving-skies' },
-  { name: 'Rayquaza VMAX Alt Art', set_name: 'Evolving Skies', set_number: '218', pricecharting_id: 'rayquaza-vmax-218-evolving-skies' },
-  { name: 'Glaceon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '209', pricecharting_id: 'glaceon-vmax-209-evolving-skies' },
-  { name: 'Espeon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '208', pricecharting_id: 'espeon-vmax-208-evolving-skies' },
-  { name: 'Leafeon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '210', pricecharting_id: 'leafeon-vmax-210-evolving-skies' },
+  { name: 'Umbreon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '215', pokemon_api_id: null },
+  { name: 'Rayquaza VMAX Alt Art', set_name: 'Evolving Skies', set_number: '218', pokemon_api_id: null },
+  { name: 'Glaceon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '209', pokemon_api_id: null },
+  { name: 'Espeon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '208', pokemon_api_id: null },
+  { name: 'Leafeon VMAX Alt Art', set_name: 'Evolving Skies', set_number: '210', pokemon_api_id: null },
   // Scarlet & Violet 151
-  { name: 'Mew ex SIR', set_name: 'Scarlet & Violet 151', set_number: '205', pricecharting_id: 'mew-ex-205-scarlet-violet-151' },
-  { name: 'Charizard ex SIR', set_name: 'Scarlet & Violet 151', set_number: '204', pricecharting_id: 'charizard-ex-204-scarlet-violet-151' },
-  { name: 'Blastoise ex SIR', set_name: 'Scarlet & Violet 151', set_number: '202', pricecharting_id: 'blastoise-ex-202-scarlet-violet-151' },
-  { name: 'Venusaur ex SIR', set_name: 'Scarlet & Violet 151', set_number: '198', pricecharting_id: 'venusaur-ex-198-scarlet-violet-151' },
+  { name: 'Mew ex SIR', set_name: 'Scarlet & Violet 151', set_number: '205', pokemon_api_id: null },
+  { name: 'Charizard ex SIR', set_name: 'Scarlet & Violet 151', set_number: '204', pokemon_api_id: null },
+  { name: 'Blastoise ex SIR', set_name: 'Scarlet & Violet 151', set_number: '202', pokemon_api_id: null },
+  { name: 'Venusaur ex SIR', set_name: 'Scarlet & Violet 151', set_number: '198', pokemon_api_id: null },
 ];
 
 if (!supabase) {

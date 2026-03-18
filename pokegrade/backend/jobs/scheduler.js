@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { supabase, isMockMode } from '../db/supabase.js';
-import { fetchPrices } from '../services/pricecharting.js';
+import { fetchPrices } from '../services/pokemonapi.js';
 import { scrapePsaPopulation } from '../scrapers/psa.js';
 import { scrapeFinnListings } from '../scrapers/finn.js';
 import { backfillMissingFxRates } from '../services/exchangerate.js';
@@ -28,14 +28,14 @@ export function startScheduler() {
 
 export async function refreshAllPrices() {
   if (!supabase) return { refreshed: 0, errors: [] };
-  const { data: cards } = await supabase.from('cards').select('id, name, pricecharting_id');
+  const { data: cards } = await supabase.from('cards').select('id, name, pokemon_api_id');
   const errors = [];
   let refreshed = 0;
 
   for (const card of cards || []) {
-    if (!card.pricecharting_id) continue;
+    if (!card.pokemon_api_id) continue;
     try {
-      const prices = await fetchPrices(card.pricecharting_id);
+      const prices = await fetchPrices(card.pokemon_api_id);
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('price_snapshots').upsert({
         card_id: card.id,
