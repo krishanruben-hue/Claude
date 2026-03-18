@@ -8,7 +8,8 @@ const router = Router();
 router.post('/refresh-prices', async (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   try {
-    const result = await refreshAllPrices();
+    const { set_id } = req.body || {};
+    const result = await refreshAllPrices(set_id || null);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

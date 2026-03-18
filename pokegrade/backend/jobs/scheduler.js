@@ -26,9 +26,11 @@ export function startScheduler() {
   console.log('[Scheduler] Planlagte jobber aktivert');
 }
 
-export async function refreshAllPrices() {
+export async function refreshAllPrices(setId = null) {
   if (!supabase) return { refreshed: 0, errors: [] };
-  const { data: cards } = await supabase.from('cards').select('id, name, pokemon_api_id');
+  let query = supabase.from('cards').select('id, name, pokemon_api_id');
+  if (setId) query = query.eq('set_id', setId);
+  const { data: cards } = await query;
   const errors = [];
   let refreshed = 0;
 
