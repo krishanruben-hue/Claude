@@ -53,11 +53,26 @@ function ptcgHeaders(): Record<string, string> {
   return PTCG_KEY ? { 'X-Api-Key': PTCG_KEY } : {};
 }
 
+async function ptcgGet<T>(url: string, retries = 5): Promise<T> {
+  let delay = 3000;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { data } = await axios.get<T>(url, { headers: ptcgHeaders(), timeout: 30000 });
+      return data;
+    } catch (err) {
+      const status = (err as { response?: { status?: number } }).response?.status;
+      const retriable = !status || status === 429 || status >= 500;
+      if (!retriable || attempt === retries) throw err;
+      console.log(`\n  [${status ?? 'timeout'}] Prøver igjen om ${delay / 1000}s... (forsøk ${attempt}/${retries})`);
+      await sleep(delay);
+      delay *= 2;
+    }
+  }
+  throw new Error('Nådde aldri hit');
+}
+
 async function fetchSets(): Promise<PtcgSet[]> {
-  const { data } = await axios.get<{ data: PtcgSet[] }>(
-    `${PTCG_BASE}/sets?pageSize=250`,
-    { headers: ptcgHeaders() }
-  );
+  const data = await ptcgGet<{ data: PtcgSet[] }>(`${PTCG_BASE}/sets?pageSize=250`);
   return data.data;
 }
 
@@ -66,9 +81,8 @@ async function fetchCardsForSet(setId: string): Promise<PtcgCard[]> {
   let page = 1;
 
   while (true) {
-    const { data } = await axios.get<{ data: PtcgCard[]; totalCount: number }>(
-      `${PTCG_BASE}/cards?q=set.id:${setId}&page=${page}&pageSize=250`,
-      { headers: ptcgHeaders() }
+    const data = await ptcgGet<{ data: PtcgCard[]; totalCount: number }>(
+      `${PTCG_BASE}/cards?q=set.id:${setId}&page=${page}&pageSize=250`
     );
     cards.push(...data.data);
     if (cards.length >= data.totalCount) break;
