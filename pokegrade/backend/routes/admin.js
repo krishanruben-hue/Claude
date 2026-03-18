@@ -1,0 +1,51 @@
+import { Router } from 'express';
+import { isMockMode } from '../db/supabase.js';
+import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard } from '../jobs/scheduler.js';
+import { supabase } from '../db/supabase.js';
+
+const router = Router();
+
+router.post('/refresh-prices', async (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  try {
+    const result = await refreshAllPrices();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/refresh-psa', async (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  try {
+    const result = await refreshAllPsaData();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/refresh-finn', async (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  try {
+    const result = await refreshAllFinnData();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/refresh-finn/:cardId', async (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  const { cardId } = req.params;
+  try {
+    const { data: card } = await supabase.from('cards').select('name').eq('id', cardId).single();
+    if (!card) return res.status(404).json({ error: 'Kort ikke funnet' });
+    const result = await refreshFinnForCard(cardId, card.name);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;
