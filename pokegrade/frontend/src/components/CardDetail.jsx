@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api/client.js';
 import { fmtNok, fmtUsd, fmtPct, fmtMultiplier, fmtNumber, roiColor } from '../utils/format.js';
 import { calculateGradingCost, calculateROI } from '../utils/calculations.js';
+import { getCardImageUrlHires } from '../utils/cardImages.js';
 import FinnListings from './FinnListings.jsx';
 
 function MetricBox({ label, value, sub, color }) {
@@ -20,6 +21,7 @@ export default function CardDetail({ cardId, onClose }) {
   const [batchSize, setBatchSize] = useState(10);
   const [customGradingCost, setCustomGradingCost] = useState(null);
   const [refreshingFinn, setRefreshingFinn] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     api.getCard(cardId)
@@ -53,6 +55,7 @@ export default function CardDetail({ cardId, onClose }) {
   const roiCls = roiColor(roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
   const popTable = card.psa_population_table || {};
+  const hiresUrl = getCardImageUrlHires(card.set_name, card.set_number);
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -70,20 +73,39 @@ export default function CardDetail({ cardId, onClose }) {
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Lavt data-advarsel */}
-          {card.low_data_warning && (
-            <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-lg p-3 text-sm text-yellow-300">
-              ⚠️ <strong>Lavt datagrunnlag:</strong> Færre enn 50 eksemplarer er gradert av PSA.
-              Gem rate og pop-tall er basert på begrenset data og bør tolkes med forsiktighet.
+          {/* Kortbilde + nøkkeltall side ved side */}
+          <div className="flex gap-5 items-start">
+            {/* Kortbilde */}
+            <div className="shrink-0 w-36 rounded-xl overflow-hidden bg-pg-border shadow-lg">
+              {hiresUrl && !imgError ? (
+                <img
+                  src={hiresUrl}
+                  alt={card.name}
+                  className="w-full h-auto"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="w-full aspect-[2.5/3.5] flex items-center justify-center text-4xl bg-pg-bg rounded-xl">
+                  🎴
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Nøkkeltall */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MetricBox label="Raw-pris" value={fmtNok(card.raw_nok)} sub={fmtUsd(card.raw_usd)} />
-            <MetricBox label="PSA 10-pris" value={fmtNok(card.psa10_nok)} sub={fmtUsd(card.psa10_usd)} />
-            <MetricBox label="Multiplier" value={fmtMultiplier(card.multiplier)} color="text-violet-300" />
-            <MetricBox label="Gem rate" value={gemPct != null ? `${gemPct}%` : '–'} color={card.low_data_warning ? 'text-yellow-400' : 'text-white'} />
+            {/* Nøkkeltall + advarsel */}
+            <div className="flex-1 space-y-3">
+              {card.low_data_warning && (
+                <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-lg p-3 text-sm text-yellow-300">
+                  ⚠️ <strong>Lavt datagrunnlag:</strong> Færre enn 50 eksemplarer er gradert av PSA.
+                  Gem rate og pop-tall bør tolkes med forsiktighet.
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <MetricBox label="Raw-pris" value={fmtNok(card.raw_nok)} sub={fmtUsd(card.raw_usd)} />
+                <MetricBox label="PSA 10-pris" value={fmtNok(card.psa10_nok)} sub={fmtUsd(card.psa10_usd)} />
+                <MetricBox label="Multiplier" value={fmtMultiplier(card.multiplier)} color="text-violet-300" />
+                <MetricBox label="Gem rate" value={gemPct != null ? `${gemPct}%` : '–'} color={card.low_data_warning ? 'text-yellow-400' : 'text-white'} />
+              </div>
+            </div>
           </div>
 
           {/* Graderingskost-kalkulator */}

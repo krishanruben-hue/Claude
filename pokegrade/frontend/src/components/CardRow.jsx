@@ -1,18 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { fmtNok, fmtUsd, fmtPct, fmtMultiplier, fmtNumber, roiColor } from '../utils/format.js';
+import { getCardImageUrl } from '../utils/cardImages.js';
 
 export default function CardRow({ card, onClick }) {
   const roiCls = roiColor(card.roi);
   const gemPct = card.gem_rate != null ? (card.gem_rate * 100).toFixed(1) : null;
+  const imgUrl = getCardImageUrl(card.set_name, card.set_number);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <tr
       className="border-b border-pg-border hover:bg-pg-card/60 cursor-pointer transition-colors"
       onClick={() => onClick(card)}
     >
-      <td className="px-4 py-3">
-        <div className="font-medium text-white">{card.name}</div>
-        <div className="text-xs text-gray-500">{card.set_name} #{card.set_number}</div>
+      <td className="px-4 py-2">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-12 shrink-0 rounded overflow-hidden bg-pg-border flex items-center justify-center">
+            {imgUrl && !imgError ? (
+              <img
+                src={imgUrl}
+                alt={card.name}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span className="text-lg">🎴</span>
+            )}
+          </div>
+          <div>
+            <div className="font-medium text-white">{card.name}</div>
+            <div className="text-xs text-gray-500">{card.set_name} #{card.set_number}</div>
+          </div>
+        </div>
       </td>
       <td className="px-3 py-3 text-right">
         <div className="text-sm text-white">{fmtNok(card.raw_nok)}</div>
