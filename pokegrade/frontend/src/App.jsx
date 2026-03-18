@@ -54,6 +54,7 @@ export default function App() {
   const [fxRate, setFxRate] = useState(null);
   const [allSets, setAllSets] = useState([]);
   const [view, setView] = useState('list'); // 'list' | 'grid' | 'icon'
+  const [sort, setSort] = useState({ key: 'roi', dir: 'desc' });
   const searchTimer = useRef(null);
 
   const {
@@ -108,6 +109,28 @@ export default function App() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const filtered = useMemo(() => applyClientFilters(cards, filters), [cards, filters]);
+
+  const sortedFiltered = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let av = a[sort.key];
+      let bv = b[sort.key];
+      // null/undefined sist
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      // Nummer-sortering for kortnummer (kan være "101", "TG01", osv.)
+      if (sort.key === 'set_number') {
+        const an = parseInt(av, 10);
+        const bn = parseInt(bv, 10);
+        if (!isNaN(an) && !isNaN(bn)) { av = an; bv = bn; }
+      }
+      if (typeof av === 'string') av = av.toLowerCase();
+      if (typeof bv === 'string') bv = bv.toLowerCase();
+      if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filtered, sort]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
   async function adminAction(action, label) {
@@ -236,16 +259,46 @@ export default function App() {
               activeCount={activeFilterCount}
               allSets={allSets}
             />
-            <div className="flex items-center justify-between mb-3 text-sm text-gray-500">
-              <span>{total.toLocaleString('nb-NO')} kort totalt</span>
-              <div className="flex items-center gap-1 border border-pg-border rounded-lg overflow-hidden">
-                {[['list','☰ Liste'],['grid','⊞ Grid'],['icon','⊟ Icon']].map(([v, label]) => (
+            {/* Verktøylinje: antall, sortering, view-velger, paginering */}
+            <div className="flex flex-wrap items-center gap-2 mb-3 text-sm text-gray-500">
+              <span className="mr-auto">{total.toLocaleString('nb-NO')} kort totalt</span>
+
+              {/* Sortering */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-600 hidden sm:block">Sorter:</span>
+                <select
+                  value={sort.key}
+                  onChange={e => setSort(s => ({ ...s, key: e.target.value }))}
+                  className="text-xs bg-pg-card border border-pg-border rounded px-2 py-1 text-gray-300 hover:border-gray-500 focus:outline-none focus:border-pg-accent cursor-pointer"
+                >
+                  <option value="roi">ROI (PSA10)</option>
+                  <option value="set_number">Nr. i sett</option>
+                  <option value="name">Kortnavn</option>
+                  <option value="raw_nok">Raw-pris</option>
+                  <option value="psa10_nok">PSA10-pris</option>
+                  <option value="multiplier">Multiplier</option>
+                  <option value="gem_rate">Gem rate</option>
+                  <option value="psa10_pop">PSA10 pop</option>
+                </select>
+                <button
+                  onClick={() => setSort(s => ({ ...s, dir: s.dir === 'desc' ? 'asc' : 'desc' }))}
+                  className="text-xs px-2 py-1 bg-pg-card border border-pg-border rounded hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+                  title={sort.dir === 'desc' ? 'Synkende' : 'Stigende'}
+                >
+                  {sort.dir === 'desc' ? '↓' : '↑'}
+                </button>
+              </div>
+
+              {/* View-velger */}
+              <div className="flex items-center gap-0 border border-pg-border rounded-lg overflow-hidden">
+                {[['list','☰'],['grid','⊞'],['icon','⊟']].map(([v, icon]) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
-                    className={`px-3 py-1 text-xs transition-colors ${view === v ? 'bg-pg-accent text-white' : 'text-gray-400 hover:text-white hover:bg-pg-card'}`}
+                    title={v === 'list' ? 'Listevisning' : v === 'grid' ? 'Gridvisning' : 'Ikonvisning'}
+                    className={`px-3 py-1 text-sm transition-colors ${view === v ? 'bg-pg-accent text-white' : 'text-gray-400 hover:text-white hover:bg-pg-card'}`}
                   >
-                    {label}
+                    {icon}
                   </button>
                 ))}
               </div>
@@ -271,7 +324,9 @@ export default function App() {
             </div>
             {view === 'list' && (
               <CardList
-                cards={filtered}
+                cards={sortedFiltered}
+                sort={sort}
+                onSortChange={setSort}
                 onCardClick={c => setSelectedCardId(c.id)}
                 watchlists={watchlists}
                 onToggleWatchlist={toggleCardInWatchlist}
@@ -280,7 +335,7 @@ export default function App() {
             )}
             {view === 'grid' && (
               <CardGrid
-                cards={filtered}
+                cards={sortedFiltered}
                 onCardClick={c => setSelectedCardId(c.id)}
                 watchlists={watchlists}
                 onToggleWatchlist={toggleCardInWatchlist}
@@ -289,7 +344,7 @@ export default function App() {
             )}
             {view === 'icon' && (
               <CardIconView
-                cards={filtered}
+                cards={sortedFiltered}
                 onCardClick={c => setSelectedCardId(c.id)}
               />
             )}

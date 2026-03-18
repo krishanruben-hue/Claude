@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import CardRow from './CardRow.jsx';
 
 const COLS = [
   { key: 'name', label: 'Kort', align: 'left' },
+  { key: 'set_number', label: '#', align: 'right' },
   { key: 'raw_nok', label: 'Raw-pris', align: 'right' },
   { key: 'psa10_nok', label: 'PSA 10-pris', align: 'right' },
   { key: 'multiplier', label: 'Multiplier', align: 'right' },
@@ -12,26 +13,14 @@ const COLS = [
   { key: 'finn_count', label: 'Finn.no', align: 'right' },
 ];
 
-export default function CardList({ cards, onCardClick, watchlists, onToggleWatchlist, onCreateWatchlist }) {
-  const [sort, setSort] = useState({ key: 'roi', dir: 'desc' });
-
+export default function CardList({ cards, sort, onSortChange, onCardClick, watchlists, onToggleWatchlist, onCreateWatchlist }) {
   function toggleSort(key) {
-    setSort(prev =>
+    onSortChange(prev =>
       prev.key === key
         ? { key, dir: prev.dir === 'desc' ? 'asc' : 'desc' }
         : { key, dir: 'desc' }
     );
   }
-
-  const sorted = [...cards].sort((a, b) => {
-    let av = a[sort.key] ?? -Infinity;
-    let bv = b[sort.key] ?? -Infinity;
-    if (typeof av === 'string') av = av.toLowerCase();
-    if (typeof bv === 'string') bv = bv.toLowerCase();
-    if (av < bv) return sort.dir === 'asc' ? -1 : 1;
-    if (av > bv) return sort.dir === 'asc' ? 1 : -1;
-    return 0;
-  });
 
   return (
     <div className="overflow-x-auto rounded-xl border border-pg-border">
@@ -42,10 +31,10 @@ export default function CardList({ cards, onCardClick, watchlists, onToggleWatch
               <th
                 key={col.key}
                 onClick={() => toggleSort(col.key)}
-                className={`px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-white transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'} ${sort.key === col.key ? 'text-pg-accent' : ''}`}
+                className={`px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-white transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'} ${sort?.key === col.key ? 'text-pg-accent' : ''}`}
               >
                 {col.label}
-                {sort.key === col.key && (
+                {sort?.key === col.key && (
                   <span className="ml-1">{sort.dir === 'desc' ? '↓' : '↑'}</span>
                 )}
               </th>
@@ -54,14 +43,14 @@ export default function CardList({ cards, onCardClick, watchlists, onToggleWatch
           </tr>
         </thead>
         <tbody className="bg-pg-bg">
-          {sorted.length === 0 ? (
+          {cards.length === 0 ? (
             <tr>
-              <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
                 Ingen kort matcher aktive filtre
               </td>
             </tr>
           ) : (
-            sorted.map(card => (
+            cards.map(card => (
               <CardRow
                 key={card.id}
                 card={card}
@@ -75,7 +64,7 @@ export default function CardList({ cards, onCardClick, watchlists, onToggleWatch
         </tbody>
       </table>
       <div className="bg-pg-card px-4 py-2 text-xs text-gray-500 border-t border-pg-border">
-        {sorted.length} av {cards.length} kort vises
+        {cards.length} kort vises
       </div>
     </div>
   );
