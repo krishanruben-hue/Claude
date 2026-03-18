@@ -6,9 +6,19 @@ create table if not exists cards (
   name text not null,
   set_name text not null,
   set_number text,
+  set_id text,
+  supertype text,
+  rarity text,
+  image_url text,
   pricecharting_id text,
   created_at timestamptz default now()
 );
+
+-- Kjør disse kolonnene om tabellen allerede eksisterer:
+-- alter table cards add column if not exists set_id text;
+-- alter table cards add column if not exists supertype text;
+-- alter table cards add column if not exists rarity text;
+-- alter table cards add column if not exists image_url text;
 
 create table if not exists price_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -56,6 +66,9 @@ create table if not exists finn_listings (
   flag text default 'none' check (flag in ('none', 'bundle', 'irrelevant')),
   url text
 );
+
+-- Unik constraint for upsert av kort
+create unique index if not exists idx_cards_set_id_number on cards(set_id, set_number);
 
 -- Indekser
 create index if not exists idx_price_snapshots_card_date on price_snapshots(card_id, date desc);
