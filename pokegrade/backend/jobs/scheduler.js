@@ -4,7 +4,7 @@ import { fetchPrices, searchCards } from '../services/pokemonapi.js';
 import { scrapePsaPopulation } from '../scrapers/psa.js';
 import { scrapeFinnListings } from '../scrapers/finn.js';
 import { scrapePsa10Price } from '../scrapers/130point.js';
-import { backfillMissingFxRates, getEurToUsdRate } from '../services/exchangerate.js';
+import { backfillMissingFxRates } from '../services/exchangerate.js';
 
 export function startScheduler() {
   if (isMockMode) {
@@ -38,12 +38,11 @@ export async function refreshAllPrices(setId = null) {
   }
   const errors = [];
   let refreshed = 0;
-  const eurUsdRate = await getEurToUsdRate();
 
   for (const card of cards || []) {
     if (!card.pokemon_api_id) continue;
     try {
-      const prices = await fetchPrices(card.pokemon_api_id, card.name, eurUsdRate);
+      const prices = await fetchPrices(card.pokemon_api_id);
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('price_snapshots').upsert({
         card_id: card.id,
