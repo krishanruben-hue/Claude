@@ -34,14 +34,10 @@ export default function CardRow({ card, onClick, watchlists, onToggleWatchlist, 
           </div>
         </div>
       </td>
-      <td className="px-3 py-3 text-right">
-        <div className="text-sm text-white">{fmtNok(card.raw_nok)}</div>
-        <div className="text-xs text-gray-500">{fmtUsd(card.raw_usd)}</div>
-      </td>
-      <td className="px-3 py-3 text-right">
-        <div className="text-sm text-white">{fmtNok(card.psa10_nok)}</div>
-        <div className="text-xs text-gray-500">{fmtUsd(card.psa10_usd)}</div>
-      </td>
+      <td className="px-3 py-3 text-right text-sm text-white">{fmtNok(card.raw_nok)}</td>
+      <td className="px-3 py-3 text-right text-sm text-white">{fmtUsd(card.raw_usd)}</td>
+      <td className="px-3 py-3 text-right text-sm text-white">{fmtNok(card.psa10_nok)}</td>
+      <td className="px-3 py-3 text-right text-sm text-white">{fmtUsd(card.psa10_usd)}</td>
       <td className="px-3 py-3 text-right text-sm font-semibold text-violet-300">
         {fmtMultiplier(card.multiplier)}
       </td>
