@@ -27,7 +27,7 @@ export function startScheduler() {
   console.log('[Scheduler] Planlagte jobber aktivert');
 }
 
-export const priceProgress = { running: false, total: 0, done: 0, errors: 0, lastError: null };
+export const priceProgress = { running: false, total: 0, done: 0, errors: 0, lastError: null, errorList: [], shouldStop: false };
 
 export async function refreshAllPrices(setId = null) {
   if (!supabase) return { refreshed: 0, errors: [] };
@@ -44,11 +44,14 @@ export async function refreshAllPrices(setId = null) {
   priceProgress.done = 0;
   priceProgress.errors = 0;
   priceProgress.lastError = null;
+  priceProgress.errorList = [];
+  priceProgress.shouldStop = false;
 
   const errors = [];
   let refreshed = 0;
 
   for (const card of eligible) {
+    if (priceProgress.shouldStop) break;
     try {
       const prices = await fetchPrices(card.pokemon_api_id);
       const today = new Date().toISOString().split('T')[0];
@@ -62,6 +65,7 @@ export async function refreshAllPrices(setId = null) {
       errors.push({ card: card.name, error: err.message });
       priceProgress.errors++;
       priceProgress.lastError = `${card.name}: ${err.message}`;
+      priceProgress.errorList.push({ card: card.name, error: err.message });
     }
     priceProgress.done++;
     await new Promise(r => setTimeout(r, 500)); // Rate limit

@@ -53,6 +53,7 @@ export default function App() {
   const [showWatchlistManager, setShowWatchlistManager] = useState(false);
   const [adminStatus, setAdminStatus] = useState('');
   const [priceProgress, setPriceProgress] = useState(null); // { running, total, done, errors }
+  const [priceErrorReport, setPriceErrorReport] = useState(null); // markdown string
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
   const [allSets, setAllSets] = useState([]);
@@ -142,11 +143,19 @@ export default function App() {
     }
     if (trackPriceProgress) {
       setPriceProgress({ running: true, total: 0, done: 0, errors: 0 });
+      setPriceErrorReport(null);
       poller = setInterval(async () => {
         try {
           const p = await api.getPriceProgress();
           setPriceProgress(p);
-          if (!p.running) clearInterval(poller);
+          if (!p.running) {
+            clearInterval(poller);
+            if (p.errorList?.length > 0) {
+              const lines = p.errorList.map(e => `- **${e.card}**: ${e.error}`).join('\n');
+              const stopped = p.shouldStop ? ' (stoppet tidlig)' : '';
+              setPriceErrorReport(`## Feil ved prisoppdatering${stopped} (${p.errorList.length} av ${p.total} feilet)\n\n${lines}`);
+            }
+          }
         } catch {}
       }, 2000);
     }
@@ -242,29 +251,50 @@ export default function App() {
                 Oppdater Finn
               </button>
               {priceProgress?.running && (
-                <div className="flex flex-col gap-1 ml-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-40 h-2 bg-pg-border rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-pg-accent transition-all duration-500"
-                        style={{ width: priceProgress.total > 0 ? `${Math.round((priceProgress.done / priceProgress.total) * 100)}%` : '0%' }}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-400">
-                      {priceProgress.done} / {priceProgress.total}
-                      {priceProgress.errors > 0 && <span className="text-red-400 ml-1">({priceProgress.errors} feil)</span>}
-                    </span>
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="w-40 h-2 bg-pg-border rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-pg-accent transition-all duration-500"
+                      style={{ width: priceProgress.total > 0 ? `${Math.round((priceProgress.done / priceProgress.total) * 100)}%` : '0%' }}
+                    />
                   </div>
-                  {priceProgress.lastError && (
-                    <span className="text-xs text-red-400 max-w-xs truncate" title={priceProgress.lastError}>
-                      {priceProgress.lastError}
-                    </span>
-                  )}
+                  <span className="text-sm text-gray-400">
+                    {priceProgress.done} / {priceProgress.total}
+                    {priceProgress.errors > 0 && <span className="text-red-400 ml-1">({priceProgress.errors} feil)</span>}
+                  </span>
+                  <button
+                    onClick={() => api.stopPriceRefresh()}
+                    className="text-xs px-2 py-1 bg-red-900/40 border border-red-700/60 rounded text-red-400 hover:bg-red-900/70 hover:text-red-300 transition-colors"
+                  >
+                    Stopp
+                  </button>
                 </div>
               )}
               {!priceProgress?.running && adminStatus && (
                 <span className="text-sm text-gray-400">{adminStatus}</span>
               )}
+            </div>
+          </div>
+        )}
+        {priceErrorReport && (
+          <div className="border-t border-red-900/40 bg-red-950/20 px-4 py-3">
+            <div className="max-w-screen-xl mx-auto">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-red-400">Feilrapport</span>
+                <button
+                  onClick={() => setPriceErrorReport(null)}
+                  className="text-xs text-gray-500 hover:text-gray-300"
+                >
+                  Lukk
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={priceErrorReport}
+                className="w-full h-40 text-xs font-mono bg-pg-bg border border-red-900/40 rounded p-2 text-red-300 resize-y focus:outline-none"
+                onClick={e => e.target.select()}
+              />
+              <p className="text-xs text-gray-500 mt-1">Klikk i tekstfeltet for å markere alt, deretter kopier</p>
             </div>
           </div>
         )}

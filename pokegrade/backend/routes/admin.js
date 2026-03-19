@@ -19,6 +19,11 @@ router.get('/refresh-prices-progress', (req, res) => {
   res.json(priceProgress);
 });
 
+router.post('/refresh-prices-stop', (req, res) => {
+  priceProgress.shouldStop = true;
+  res.json({ ok: true });
+});
+
 router.post('/refresh-psa10', (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   res.json({ started: true });
