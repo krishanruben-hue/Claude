@@ -3,7 +3,6 @@ import CardRow from './CardRow.jsx';
 
 const COLS = [
   { key: 'name', label: 'Kort', align: 'left' },
-  { key: 'set_number', label: '#', align: 'right' },
   { key: 'raw_nok', label: 'Raw (NOK)', align: 'right' },
   { key: 'raw_usd', label: 'Raw (USD)', align: 'right' },
   { key: 'psa10_nok', label: 'PSA10 (NOK)', align: 'right' },
@@ -47,7 +46,7 @@ export default function CardList({ cards, sort, onSortChange, onCardClick, watch
         <tbody className="bg-pg-bg">
           {cards.length === 0 ? (
             <tr>
-              <td colSpan={12} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={11} className="px-4 py-12 text-center text-gray-500">
                 Ingen kort matcher aktive filtre
               </td>
             </tr>
