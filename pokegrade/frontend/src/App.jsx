@@ -143,7 +143,7 @@ export default function App() {
       const res = await action();
       if (poller) clearInterval(poller);
       if (res.started) {
-        setAdminStatus('Oppdatering startet i bakgrunnen – sjekk Render-loggene for resultat');
+        setAdminStatus('Oppdatering startet i bakgrunnen – kan ta noen minutter');
       } else {
         const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
         const errCount = res.errors?.length ?? 0;
