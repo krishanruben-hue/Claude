@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
-import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds } from '../jobs/scheduler.js';
+import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds, refreshPsa10Prices } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
 
 const router = Router();
@@ -13,6 +13,14 @@ router.post('/refresh-prices', (req, res) => {
   refreshAllPrices(set_id || null)
     .then(r => console.log('[admin] refreshAllPrices ferdig:', r.refreshed, 'kort,', r.errors.length, 'feil'))
     .catch(err => console.error('[admin] refreshAllPrices feil:', err.message));
+});
+
+router.post('/refresh-psa10', (req, res) => {
+  if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
+  res.json({ started: true });
+  refreshPsa10Prices()
+    .then(r => console.log('[admin] refreshPsa10Prices ferdig:', r.refreshed, 'kort,', r.errors.length, 'feil'))
+    .catch(err => console.error('[admin] refreshPsa10Prices feil:', err.message));
 });
 
 router.post('/refresh-psa', async (req, res) => {

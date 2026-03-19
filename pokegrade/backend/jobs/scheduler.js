@@ -3,6 +3,7 @@ import { supabase, isMockMode } from '../db/supabase.js';
 import { fetchPrices, searchCards } from '../services/pokemonapi.js';
 import { scrapePsaPopulation } from '../scrapers/psa.js';
 import { scrapeFinnListings } from '../scrapers/finn.js';
+import { scrapePsa10Price } from '../scrapers/130point.js';
 import { backfillMissingFxRates, getEurToUsdRate } from '../services/exchangerate.js';
 
 export function startScheduler() {
@@ -132,6 +133,46 @@ export async function autoLinkCardIds() {
   }
 
   return { linked, errors };
+}
+
+// Henter PSA 10-priser fra 130point.com for alle kort med raw_usd > $4 i dag
+export async function refreshPsa10Prices() {
+  if (!supabase) return { refreshed: 0, errors: [] };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Hent kort som har raw_usd > 4 i dagens snapshot
+  const { data: snapshots, error } = await supabase
+    .from('price_snapshots')
+    .select('card_id, cards(name)')
+    .eq('date', today)
+    .gt('raw_usd', 4);
+
+  if (error) throw new Error(`Supabase-feil: ${error.message}`);
+
+  const errors = [];
+  let refreshed = 0;
+
+  for (const snap of snapshots || []) {
+    const cardName = snap.cards?.name;
+    if (!cardName) continue;
+    try {
+      const psa10 = await scrapePsa10Price(cardName);
+      if (psa10 !== null) {
+        await supabase
+          .from('price_snapshots')
+          .update({ psa10_usd: psa10 })
+          .eq('card_id', snap.card_id)
+          .eq('date', today);
+        refreshed++;
+      }
+    } catch (err) {
+      errors.push({ card: cardName, error: err.message });
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  return { refreshed, errors };
 }
 
 export async function refreshFinnForCard(cardId, cardName) {
