@@ -27,6 +27,8 @@ export function startScheduler() {
   console.log('[Scheduler] Planlagte jobber aktivert');
 }
 
+export const priceProgress = { running: false, total: 0, done: 0, errors: 0 };
+
 export async function refreshAllPrices(setId = null) {
   if (!supabase) return { refreshed: 0, errors: [] };
   let query = supabase.from('cards').select('id, name, pokemon_api_id');
@@ -36,11 +38,16 @@ export async function refreshAllPrices(setId = null) {
     console.error('[refreshAllPrices] Supabase-feil ved henting av kort:', cardsError);
     throw new Error(`Supabase-feil: ${cardsError.message}`);
   }
+  const eligible = (cards || []).filter(c => c.pokemon_api_id);
+  priceProgress.running = true;
+  priceProgress.total = eligible.length;
+  priceProgress.done = 0;
+  priceProgress.errors = 0;
+
   const errors = [];
   let refreshed = 0;
 
-  for (const card of cards || []) {
-    if (!card.pokemon_api_id) continue;
+  for (const card of eligible) {
     try {
       const prices = await fetchPrices(card.pokemon_api_id);
       const today = new Date().toISOString().split('T')[0];
@@ -50,12 +57,15 @@ export async function refreshAllPrices(setId = null) {
         ...prices,
       }, { onConflict: 'card_id,date' });
       refreshed++;
-      await new Promise(r => setTimeout(r, 500)); // Rate limit
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
+      priceProgress.errors++;
     }
+    priceProgress.done++;
+    await new Promise(r => setTimeout(r, 500)); // Rate limit
   }
 
+  priceProgress.running = false;
   await backfillMissingFxRates();
   return { refreshed, errors };
 }

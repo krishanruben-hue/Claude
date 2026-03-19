@@ -43,6 +43,7 @@ export const api = {
   autoLinkCards: () => post('/admin/auto-link-cards'),
   getLinkProgress: () => get('/admin/link-progress'),
   refreshPrices: (setId) => post('/admin/refresh-prices', setId ? { set_id: setId } : undefined),
+  getPriceProgress: () => get('/admin/refresh-prices-progress'),
   refreshPsa: () => post('/admin/refresh-psa'),
   refreshFinn: () => post('/admin/refresh-finn'),
   refreshFinnCard: (id) => post(`/admin/refresh-finn/${id}`),

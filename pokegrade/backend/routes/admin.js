@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
-import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds, refreshPsa10Prices } from '../jobs/scheduler.js';
+import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds, refreshPsa10Prices, priceProgress } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
 
 const router = Router();
@@ -13,6 +13,10 @@ router.post('/refresh-prices', (req, res) => {
   refreshAllPrices(set_id || null)
     .then(r => console.log('[admin] refreshAllPrices ferdig:', r.refreshed, 'kort,', r.errors.length, 'feil'))
     .catch(err => console.error('[admin] refreshAllPrices feil:', err.message));
+});
+
+router.get('/refresh-prices-progress', (req, res) => {
+  res.json(priceProgress);
 });
 
 router.post('/refresh-psa10', (req, res) => {

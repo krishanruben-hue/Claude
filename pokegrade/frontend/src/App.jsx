@@ -52,6 +52,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showWatchlistManager, setShowWatchlistManager] = useState(false);
   const [adminStatus, setAdminStatus] = useState('');
+  const [priceProgress, setPriceProgress] = useState(null); // { running, total, done, errors }
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
   const [allSets, setAllSets] = useState([]);
@@ -128,7 +129,7 @@ export default function App() {
   const filtered = useMemo(() => applyClientFilters(cards, filters), [cards, filters]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
-  async function adminAction(action, label, poll = false) {
+  async function adminAction(action, label, poll = false, trackPriceProgress = false) {
     setAdminStatus(`${label}...`);
     let poller = null;
     if (poll) {
@@ -139,12 +140,23 @@ export default function App() {
         } catch {}
       }, 3000);
     }
+    if (trackPriceProgress) {
+      setPriceProgress({ running: true, total: 0, done: 0, errors: 0 });
+      poller = setInterval(async () => {
+        try {
+          const p = await api.getPriceProgress();
+          setPriceProgress(p);
+          if (!p.running) clearInterval(poller);
+        } catch {}
+      }, 2000);
+    }
     try {
       const res = await action();
-      if (poller) clearInterval(poller);
+      if (!trackPriceProgress && poller) clearInterval(poller);
       if (res.started) {
-        setAdminStatus('Oppdatering startet i bakgrunnen – kan ta noen minutter');
+        if (!trackPriceProgress) setAdminStatus('Oppdatering startet i bakgrunnen – kan ta noen minutter');
       } else {
+        if (trackPriceProgress) setPriceProgress(null);
         const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
         const errCount = res.errors?.length ?? 0;
         const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
@@ -153,6 +165,7 @@ export default function App() {
       if (!res.mock) fetchCards(page, filters);
     } catch (err) {
       if (poller) clearInterval(poller);
+      if (trackPriceProgress) setPriceProgress(null);
       setAdminStatus(`Feil: ${err.message}`);
     }
   }
@@ -210,8 +223,9 @@ export default function App() {
                 Koble API-IDer
               </button>
               <button
-                onClick={() => adminAction(() => api.refreshPrices(filters.set || null), filters.set ? `Oppdaterer priser for ${filters.set}` : 'Oppdaterer priser')}
+                onClick={() => adminAction(() => api.refreshPrices(filters.set || null), filters.set ? `Oppdaterer priser for ${filters.set}` : 'Oppdaterer priser', false, true)}
                 className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
+                disabled={priceProgress?.running}
               >
                 {filters.set ? `Oppdater priser (${filters.set})` : 'Oppdater priser'}
               </button>
@@ -227,7 +241,21 @@ export default function App() {
               >
                 Oppdater Finn
               </button>
-              {adminStatus && (
+              {priceProgress?.running && (
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="w-40 h-2 bg-pg-border rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-pg-accent transition-all duration-500"
+                      style={{ width: priceProgress.total > 0 ? `${Math.round((priceProgress.done / priceProgress.total) * 100)}%` : '0%' }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-400">
+                    {priceProgress.done} / {priceProgress.total}
+                    {priceProgress.errors > 0 && <span className="text-red-400 ml-1">({priceProgress.errors} feil)</span>}
+                  </span>
+                </div>
+              )}
+              {!priceProgress?.running && adminStatus && (
                 <span className="text-sm text-gray-400">{adminStatus}</span>
               )}
             </div>
