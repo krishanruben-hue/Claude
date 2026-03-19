@@ -30,7 +30,11 @@ export async function refreshAllPrices(setId = null) {
   if (!supabase) return { refreshed: 0, errors: [] };
   let query = supabase.from('cards').select('id, name, pokemon_api_id');
   if (setId) query = query.eq('set_id', setId);
-  const { data: cards } = await query;
+  const { data: cards, error: cardsError } = await query;
+  if (cardsError) {
+    console.error('[refreshAllPrices] Supabase-feil ved henting av kort:', cardsError);
+    throw new Error(`Supabase-feil: ${cardsError.message}`);
+  }
   const errors = [];
   let refreshed = 0;
   const eurUsdRate = await getEurToUsdRate();

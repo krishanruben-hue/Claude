@@ -12,6 +12,7 @@ router.post('/refresh-prices', async (req, res) => {
     const result = await refreshAllPrices(set_id || null);
     res.json(result);
   } catch (err) {
+    console.error('[admin] POST /refresh-prices feil:', err);
     res.status(500).json({ error: err.message });
   }
 });
