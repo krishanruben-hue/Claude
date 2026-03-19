@@ -11,6 +11,11 @@ function makeHeaders() {
 export async function fetchPrices(pokemonApiId) {
   if (!pokemonApiId) return { raw_usd: null, psa9_usd: null, psa10_usd: null };
 
+  // Numeriske IDer er ugyldige for pokemontcg.io (skal være f.eks. "sv3pt5-1")
+  if (/^\d+$/.test(String(pokemonApiId))) {
+    throw new Error(`Ugyldig pokemon_api_id "${pokemonApiId}" – er et rent tall, ikke en TCG-ID`);
+  }
+
   let res;
   try {
     res = await axios.get(`${BASE_URL}/cards/${pokemonApiId}`, {
@@ -19,7 +24,8 @@ export async function fetchPrices(pokemonApiId) {
     });
   } catch (err) {
     const status = err.response?.status;
-    throw new Error(`HTTP ${status} fra pokemontcg.io for ID "${pokemonApiId}"`);
+    const detail = status ? `HTTP ${status}` : (err.code ?? err.message);
+    throw new Error(`${detail} fra pokemontcg.io for ID "${pokemonApiId}"`);
   }
 
   const prices = res.data?.data?.tcgplayer?.prices ?? {};
