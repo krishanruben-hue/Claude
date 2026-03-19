@@ -27,5 +27,5 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          POKEMON_API_KEY: ${{ secrets.POKEMON_API_KEY }}
+          PTCG_API_KEY: ${{ secrets.PTCG_API_KEY }}
         run: node scripts/link-cards.js "${{ github.event.inputs.set_name }}"
