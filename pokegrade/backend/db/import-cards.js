@@ -94,7 +94,7 @@ async function main() {
       name:              c.name,
       set_name:          c.set.name,
       set_number:        c.number,
-      pokemon_api_id:  null,
+      pokemon_api_id:    c.id,
     }));
 
     const { error } = await supabase.from('cards').insert(rows);
