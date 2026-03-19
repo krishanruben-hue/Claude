@@ -242,17 +242,24 @@ export default function App() {
                 Oppdater Finn
               </button>
               {priceProgress?.running && (
-                <div className="flex items-center gap-2 ml-2">
-                  <div className="w-40 h-2 bg-pg-border rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-pg-accent transition-all duration-500"
-                      style={{ width: priceProgress.total > 0 ? `${Math.round((priceProgress.done / priceProgress.total) * 100)}%` : '0%' }}
-                    />
+                <div className="flex flex-col gap-1 ml-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-40 h-2 bg-pg-border rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-pg-accent transition-all duration-500"
+                        style={{ width: priceProgress.total > 0 ? `${Math.round((priceProgress.done / priceProgress.total) * 100)}%` : '0%' }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-400">
+                      {priceProgress.done} / {priceProgress.total}
+                      {priceProgress.errors > 0 && <span className="text-red-400 ml-1">({priceProgress.errors} feil)</span>}
+                    </span>
                   </div>
-                  <span className="text-sm text-gray-400">
-                    {priceProgress.done} / {priceProgress.total}
-                    {priceProgress.errors > 0 && <span className="text-red-400 ml-1">({priceProgress.errors} feil)</span>}
-                  </span>
+                  {priceProgress.lastError && (
+                    <span className="text-xs text-red-400 max-w-xs truncate" title={priceProgress.lastError}>
+                      {priceProgress.lastError}
+                    </span>
+                  )}
                 </div>
               )}
               {!priceProgress?.running && adminStatus && (

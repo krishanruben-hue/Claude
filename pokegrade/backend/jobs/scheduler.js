@@ -27,7 +27,7 @@ export function startScheduler() {
   console.log('[Scheduler] Planlagte jobber aktivert');
 }
 
-export const priceProgress = { running: false, total: 0, done: 0, errors: 0 };
+export const priceProgress = { running: false, total: 0, done: 0, errors: 0, lastError: null };
 
 export async function refreshAllPrices(setId = null) {
   if (!supabase) return { refreshed: 0, errors: [] };
@@ -43,6 +43,7 @@ export async function refreshAllPrices(setId = null) {
   priceProgress.total = eligible.length;
   priceProgress.done = 0;
   priceProgress.errors = 0;
+  priceProgress.lastError = null;
 
   const errors = [];
   let refreshed = 0;
@@ -60,6 +61,7 @@ export async function refreshAllPrices(setId = null) {
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
       priceProgress.errors++;
+      priceProgress.lastError = `${card.name}: ${err.message}`;
     }
     priceProgress.done++;
     await new Promise(r => setTimeout(r, 500)); // Rate limit
