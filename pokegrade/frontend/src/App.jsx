@@ -142,10 +142,14 @@ export default function App() {
     try {
       const res = await action();
       if (poller) clearInterval(poller);
-      const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
-      const errCount = res.errors?.length ?? 0;
-      const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
-      setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
+      if (res.started) {
+        setAdminStatus('Oppdatering startet i bakgrunnen – sjekk Render-loggene for resultat');
+      } else {
+        const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
+        const errCount = res.errors?.length ?? 0;
+        const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
+        setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
+      }
       if (!res.mock) fetchCards(page, filters);
     } catch (err) {
       if (poller) clearInterval(poller);

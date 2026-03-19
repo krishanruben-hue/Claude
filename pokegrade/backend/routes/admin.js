@@ -5,16 +5,14 @@ import { supabase } from '../db/supabase.js';
 
 const router = Router();
 
-router.post('/refresh-prices', async (req, res) => {
+router.post('/refresh-prices', (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
-  try {
-    const { set_id } = req.body || {};
-    const result = await refreshAllPrices(set_id || null);
-    res.json(result);
-  } catch (err) {
-    console.error('[admin] POST /refresh-prices feil:', err);
-    res.status(500).json({ error: err.message });
-  }
+  const { set_id } = req.body || {};
+  // Returner umiddelbart for å unngå Render sin 30s HTTP-timeout
+  res.json({ started: true });
+  refreshAllPrices(set_id || null)
+    .then(r => console.log('[admin] refreshAllPrices ferdig:', r.refreshed, 'kort,', r.errors.length, 'feil'))
+    .catch(err => console.error('[admin] refreshAllPrices feil:', err.message));
 });
 
 router.post('/refresh-psa', async (req, res) => {
