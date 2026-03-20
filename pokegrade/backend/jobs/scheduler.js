@@ -30,21 +30,40 @@ export function startScheduler() {
 async function refreshPricesForCards(cards) {
   const errors = [];
   let refreshed = 0;
+  let nullPrices = 0;
 
   for (const card of cards || []) {
     try {
       const prices = await fetchPrices(card.name);
+      const hasPrices = prices.psa10_usd != null || prices.psa9_usd != null || prices.raw_usd != null;
+
+      if (!hasPrices) {
+        nullPrices++;
+        console.warn(`[Prices] Ingen eBay-treff for "${card.name}"`);
+        continue;
+      }
+
       const today = new Date().toISOString().split('T')[0];
-      await supabase.from('price_snapshots').upsert({
+      const { error } = await supabase.from('price_snapshots').upsert({
         card_id: card.id,
         date: today,
         ...prices,
       }, { onConflict: 'card_id,date' });
-      refreshed++;
+
+      if (error) {
+        errors.push({ card: card.name, error: error.message });
+      } else {
+        refreshed++;
+      }
+
       await new Promise(r => setTimeout(r, 500)); // Rate limit
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
     }
+  }
+
+  if (nullPrices > 0) {
+    errors.push({ card: '(ingen treff)', error: `${nullPrices} kort hadde ingen eBay solgt-data` });
   }
 
   return { refreshed, errors };

@@ -104,9 +104,5 @@ export async function fetchPrices(cardName) {
     raw_usd: null,
     psa9_usd: psa9,
     psa10_usd: psa10,
-    graded: {
-      9: psa9,
-      10: psa10,
-    },
   };
 }
