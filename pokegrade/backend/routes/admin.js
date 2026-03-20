@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
 import { refreshAllPrices, refreshPricesForSet, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
+import axios from 'axios';
 
 const router = Router();
 
@@ -67,6 +68,41 @@ router.post('/refresh-finn/:cardId', async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Debug: test ett eBay-kall og returner rå svar
+router.get('/debug-ebay', async (req, res) => {
+  const appId = process.env.EBAY_APP_ID;
+  if (!appId) return res.status(500).json({ error: 'EBAY_APP_ID ikke satt' });
+
+  const keywords = req.query.q || 'Charizard PSA 10';
+  try {
+    const response = await axios.get('https://svcs.ebay.com/services/search/FindingService/v1', {
+      params: {
+        'OPERATION-NAME': 'findCompletedItems',
+        'SERVICE-VERSION': '1.0.0',
+        'SECURITY-APPNAME': appId,
+        'RESPONSE-DATA-FORMAT': 'JSON',
+        'GLOBAL-ID': 'EBAY-US',
+        'siteid': '0',
+        'keywords': keywords,
+        'categoryId': '183454',
+        'itemFilter(0).name': 'SoldItemsOnly',
+        'itemFilter(0).value': 'true',
+        'paginationInput.entriesPerPage': '5',
+      },
+      timeout: 10000,
+    });
+    res.json({ status: response.status, appId: appId.slice(0, 8) + '...', keywords, data: response.data });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      httpStatus: err.response?.status,
+      data: err.response?.data,
+      appId: appId.slice(0, 8) + '...',
+      keywords,
+    });
   }
 });
 
