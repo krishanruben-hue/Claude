@@ -13,58 +13,66 @@ function median(values) {
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-async function searchSoldItems(appId, keywords) {
-  try {
-    const res = await axios.get(FINDING_URL, {
-      params: {
-        'OPERATION-NAME': 'findCompletedItems',
-        'SERVICE-VERSION': '1.0.0',
-        'SECURITY-APPNAME': appId,
-        'RESPONSE-DATA-FORMAT': 'JSON',
-        'GLOBAL-ID': 'EBAY-US',
-        'siteid': '0',
-        'keywords': keywords,
-        'categoryId': POKEMON_CATEGORY_ID,
-        'itemFilter(0).name': 'SoldItemsOnly',
-        'itemFilter(0).value': 'true',
-        'sortOrder': 'EndTimeSoonest',
-        'paginationInput.entriesPerPage': '50',
-      },
-      timeout: 10000,
-    });
+const delay = ms => new Promise(r => setTimeout(r, ms));
 
-    const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
-    if (ack !== 'Success' && ack !== 'Warning') {
-      const msg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
-      console.warn(`[eBay] API-feil for "${keywords}": ${msg}`);
+async function searchSoldItems(appId, keywords, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await axios.get(FINDING_URL, {
+        params: {
+          'OPERATION-NAME': 'findCompletedItems',
+          'SERVICE-VERSION': '1.0.0',
+          'SECURITY-APPNAME': appId,
+          'RESPONSE-DATA-FORMAT': 'JSON',
+          'GLOBAL-ID': 'EBAY-US',
+          'siteid': '0',
+          'keywords': keywords,
+          'categoryId': POKEMON_CATEGORY_ID,
+          'itemFilter(0).name': 'SoldItemsOnly',
+          'itemFilter(0).value': 'true',
+          'sortOrder': 'EndTimeSoonest',
+          'paginationInput.entriesPerPage': '50',
+        },
+        timeout: 10000,
+      });
+
+      const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
+      if (ack !== 'Success' && ack !== 'Warning') {
+        const errorId = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.errorId?.[0];
+        const msg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
+        if (errorId === '10001' && attempt < retries) {
+          console.warn(`[eBay] Rate limit for "${keywords}", venter ${attempt * 5}s (forsøk ${attempt}/${retries})`);
+          await delay(attempt * 5000);
+          continue;
+        }
+        console.warn(`[eBay] API-feil for "${keywords}": ${msg}`);
+        return [];
+      }
+
+      const items = res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+      return items
+        .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
+        .filter(p => !isNaN(p) && p > 0);
+    } catch (err) {
+      console.warn(`[eBay] HTTP ${err.response?.status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
       return [];
     }
-
-    const items = res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-    return items
-      .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
-      .filter(p => !isNaN(p) && p > 0);
-  } catch (err) {
-    console.warn(`[eBay] HTTP ${err.response?.status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
-    return [];
   }
+  return [];
 }
 
 export async function fetchPrices(cardName) {
   const appId = process.env.EBAY_APP_ID;
   if (!appId) throw new Error('EBAY_APP_ID ikke konfigurert');
 
-  const [psa10Prices, psa9Prices] = await Promise.all([
-    searchSoldItems(appId, `${cardName} PSA 10`),
-    searchSoldItems(appId, `${cardName} PSA 9`),
-  ]);
-
-  const psa10 = median(psa10Prices);
-  const psa9 = median(psa9Prices);
+  // Sekvensielle kall for å unngå rate limiting
+  const psa10Prices = await searchSoldItems(appId, `${cardName} PSA 10`);
+  await delay(1500);
+  const psa9Prices = await searchSoldItems(appId, `${cardName} PSA 9`);
 
   return {
     raw_usd: null,
-    psa9_usd: psa9,
-    psa10_usd: psa10,
+    psa9_usd: median(psa9Prices),
+    psa10_usd: median(psa10Prices),
   };
 }

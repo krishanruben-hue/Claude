@@ -56,7 +56,7 @@ async function refreshPricesForCards(cards) {
         refreshed++;
       }
 
-      await new Promise(r => setTimeout(r, 500)); // Rate limit
+      await new Promise(r => setTimeout(r, 2000)); // Rate limit
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
     }
