@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
-import { refreshAllPrices, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds } from '../jobs/scheduler.js';
+import { refreshAllPrices, refreshPricesForSet, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard, autoLinkCardIds } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
 
 const router = Router();
@@ -8,7 +8,8 @@ const router = Router();
 router.post('/refresh-prices', async (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   try {
-    const result = await refreshAllPrices();
+    const setId = req.query.set?.trim();
+    const result = setId ? await refreshPricesForSet(setId) : await refreshAllPrices();
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

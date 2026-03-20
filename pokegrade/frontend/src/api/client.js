@@ -33,7 +33,7 @@ export const api = {
   getCard: (id) => get(`/cards/${id}`),
   autoLinkCards: () => post('/admin/auto-link-cards'),
   getLinkProgress: () => get('/admin/link-progress'),
-  refreshPrices: () => post('/admin/refresh-prices'),
+  refreshPrices: (setId) => post(`/admin/refresh-prices${setId ? `?set=${encodeURIComponent(setId)}` : ''}`),
   refreshPsa: () => post('/admin/refresh-psa'),
   refreshFinn: () => post('/admin/refresh-finn'),
   refreshFinnCard: (id) => post(`/admin/refresh-finn/${id}`),

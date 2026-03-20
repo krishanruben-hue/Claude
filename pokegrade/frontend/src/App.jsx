@@ -214,10 +214,10 @@ export default function App() {
                 Koble API-IDer
               </button>
               <button
-                onClick={() => adminAction(api.refreshPrices, 'Oppdaterer priser')}
+                onClick={() => adminAction(() => api.refreshPrices(filters.set || null), filters.set ? `Oppdaterer priser (${filters.set})` : 'Oppdaterer alle priser')}
                 className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
               >
-                Oppdater priser
+                Oppdater priser{filters.set ? ` (${filters.set})` : ''}
               </button>
               <button
                 onClick={() => adminAction(api.refreshPsa, 'Scraper PSA Pop Report')}

@@ -27,9 +27,7 @@ export function startScheduler() {
   console.log('[Scheduler] Planlagte jobber aktivert');
 }
 
-export async function refreshAllPrices() {
-  if (!supabase) return { refreshed: 0, errors: [] };
-  const { data: cards } = await supabase.from('cards').select('id, name');
+async function refreshPricesForCards(cards) {
   const errors = [];
   let refreshed = 0;
 
@@ -49,8 +47,23 @@ export async function refreshAllPrices() {
     }
   }
 
-  await backfillMissingFxRates();
   return { refreshed, errors };
+}
+
+export async function refreshAllPrices() {
+  if (!supabase) return { refreshed: 0, errors: [] };
+  const { data: cards } = await supabase.from('cards').select('id, name');
+  const result = await refreshPricesForCards(cards);
+  await backfillMissingFxRates();
+  return result;
+}
+
+export async function refreshPricesForSet(setId) {
+  if (!supabase) return { refreshed: 0, errors: [] };
+  const { data: cards } = await supabase.from('cards').select('id, name').eq('set_id', setId);
+  const result = await refreshPricesForCards(cards);
+  await backfillMissingFxRates();
+  return result;
 }
 
 export async function refreshAllPsaData() {
