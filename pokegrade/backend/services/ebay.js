@@ -1,7 +1,36 @@
 import axios from 'axios';
 
-const FINDING_API_URL = 'https://svcs.ebay.com/services/search/FindingService/v1';
-const POKEMON_CATEGORY_ID = '183454'; // Pokémon Trading Card Game singles
+const TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
+const BROWSE_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
+const POKEMON_CATEGORY_ID = '183454';
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getAccessToken() {
+  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+
+  const appId = process.env.EBAY_APP_ID;
+  const certId = process.env.EBAY_CERT_ID;
+  if (!appId || !certId) throw new Error('EBAY_APP_ID eller EBAY_CERT_ID ikke konfigurert');
+
+  const credentials = Buffer.from(`${appId}:${certId}`).toString('base64');
+  const res = await axios.post(
+    TOKEN_URL,
+    'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope',
+    {
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      timeout: 10000,
+    }
+  );
+
+  cachedToken = res.data.access_token;
+  tokenExpiry = Date.now() + (res.data.expires_in - 60) * 1000;
+  return cachedToken;
+}
 
 function median(values) {
   if (!values.length) return null;
@@ -12,48 +41,37 @@ function median(values) {
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-async function searchSoldItems(appId, keywords) {
-  const params = {
-    'OPERATION-NAME': 'findCompletedItems',
-    'SERVICE-VERSION': '1.0.0',
-    'SECURITY-APPNAME': appId,
-    'RESPONSE-DATA-FORMAT': 'JSON',
-    'keywords': keywords,
-    'categoryId': POKEMON_CATEGORY_ID,
-    'itemFilter(0).name': 'SoldItemsOnly',
-    'itemFilter(0).value': 'true',
-    'sortOrder': 'EndTimeSoonest',
-    'paginationInput.entriesPerPage': '50',
-  };
-
+async function searchListings(token, keywords) {
   try {
-    const res = await axios.get(FINDING_API_URL, { params, timeout: 10000 });
-    const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
-    if (ack === 'Failure') {
-      const errMsg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
-      console.warn(`[eBay] API-feil for "${keywords}": ${errMsg}`);
-      return [];
-    }
-    const items =
-      res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+    const res = await axios.get(BROWSE_URL, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      params: {
+        q: keywords,
+        category_ids: POKEMON_CATEGORY_ID,
+        filter: 'buyingOptions:{FIXED_PRICE}',
+        sort: 'price',
+        limit: 50,
+      },
+      timeout: 10000,
+    });
+
+    const items = res.data?.itemSummaries || [];
     return items
-      .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
+      .map(item => parseFloat(item.price?.convertedFromValue || item.price?.value))
       .filter(p => !isNaN(p) && p > 0);
   } catch (err) {
     const status = err.response?.status;
-    const body = err.response?.data;
-    console.warn(`[eBay] HTTP ${status} for "${keywords}": ${body}`);
+    console.warn(`[eBay] HTTP ${status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
     return [];
   }
 }
 
 export async function fetchPrices(cardName) {
-  const appId = process.env.EBAY_APP_ID;
-  if (!appId) throw new Error('EBAY_APP_ID ikke konfigurert');
+  const token = await getAccessToken();
 
   const [psa10Prices, psa9Prices] = await Promise.all([
-    searchSoldItems(appId, `${cardName} PSA 10`),
-    searchSoldItems(appId, `${cardName} PSA 9`),
+    searchListings(token, `${cardName} PSA 10`),
+    searchListings(token, `${cardName} PSA 9`),
   ]);
 
   const psa10 = median(psa10Prices);
