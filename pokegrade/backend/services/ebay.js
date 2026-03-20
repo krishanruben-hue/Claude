@@ -26,13 +26,25 @@ async function searchSoldItems(appId, keywords) {
     'paginationInput.entriesPerPage': '50',
   };
 
-  const res = await axios.get(FINDING_API_URL, { params, timeout: 10000 });
-  const items =
-    res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-
-  return items
-    .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
-    .filter(p => !isNaN(p) && p > 0);
+  try {
+    const res = await axios.get(FINDING_API_URL, { params, timeout: 10000 });
+    const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
+    if (ack === 'Failure') {
+      const errMsg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
+      console.warn(`[eBay] API-feil for "${keywords}": ${errMsg}`);
+      return [];
+    }
+    const items =
+      res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+    return items
+      .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
+      .filter(p => !isNaN(p) && p > 0);
+  } catch (err) {
+    const status = err.response?.status;
+    const body = err.response?.data;
+    console.warn(`[eBay] HTTP ${status} for "${keywords}": ${body}`);
+    return [];
+  }
 }
 
 export async function fetchPrices(cardName) {
