@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
-const BROWSE_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
+const FINDING_URL = 'https://svcs.ebay.com/services/search/FindingService/v1';
 const POKEMON_CATEGORY_ID = '183454';
 
 let cachedToken = null;
@@ -41,37 +41,54 @@ function median(values) {
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-async function searchListings(token, keywords) {
+async function searchSoldItems(token, appId, keywords) {
   try {
-    const res = await axios.get(BROWSE_URL, {
-      headers: { 'Authorization': `Bearer ${token}` },
+    const res = await axios.get(FINDING_URL, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-EBAY-SOA-GLOBAL-ID': 'EBAY-US',
+      },
       params: {
-        q: keywords,
-        category_ids: POKEMON_CATEGORY_ID,
-        filter: 'buyingOptions:{FIXED_PRICE}',
-        sort: 'price',
-        limit: 50,
+        'OPERATION-NAME': 'findCompletedItems',
+        'SERVICE-VERSION': '1.0.0',
+        'SECURITY-APPNAME': appId,
+        'RESPONSE-DATA-FORMAT': 'JSON',
+        'GLOBAL-ID': 'EBAY-US',
+        'siteid': '0',
+        'keywords': keywords,
+        'categoryId': POKEMON_CATEGORY_ID,
+        'itemFilter(0).name': 'SoldItemsOnly',
+        'itemFilter(0).value': 'true',
+        'sortOrder': 'EndTimeSoonest',
+        'paginationInput.entriesPerPage': '50',
       },
       timeout: 10000,
     });
 
-    const items = res.data?.itemSummaries || [];
+    const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
+    if (ack === 'Failure') {
+      const msg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
+      console.warn(`[eBay] API-feil for "${keywords}": ${msg}`);
+      return [];
+    }
+
+    const items = res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
     return items
-      .map(item => parseFloat(item.price?.convertedFromValue || item.price?.value))
+      .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
       .filter(p => !isNaN(p) && p > 0);
   } catch (err) {
-    const status = err.response?.status;
-    console.warn(`[eBay] HTTP ${status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
+    console.warn(`[eBay] HTTP ${err.response?.status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
     return [];
   }
 }
 
 export async function fetchPrices(cardName) {
+  const appId = process.env.EBAY_APP_ID;
   const token = await getAccessToken();
 
   const [psa10Prices, psa9Prices] = await Promise.all([
-    searchListings(token, `${cardName} PSA 10`),
-    searchListings(token, `${cardName} PSA 9`),
+    searchSoldItems(token, appId, `${cardName} PSA 10`),
+    searchSoldItems(token, appId, `${cardName} PSA 9`),
   ]);
 
   const psa10 = median(psa10Prices);
