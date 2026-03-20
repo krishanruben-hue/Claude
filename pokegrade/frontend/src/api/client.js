@@ -2,7 +2,10 @@ const BASE = '/api';
 
 async function get(path) {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`API-feil ${res.status}: ${path}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `API-feil ${res.status}: ${path}`);
+  }
   return res.json();
 }
 
@@ -12,7 +15,10 @@ async function post(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`API-feil ${res.status}: ${path}`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `API-feil ${res.status}: ${path}`);
+  }
   return res.json();
 }
 

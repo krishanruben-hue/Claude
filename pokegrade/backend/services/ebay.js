@@ -84,7 +84,13 @@ async function searchSoldItems(token, appId, keywords) {
 
 export async function fetchPrices(cardName) {
   const appId = process.env.EBAY_APP_ID;
-  const token = await getAccessToken();
+  let token;
+  try {
+    token = await getAccessToken();
+  } catch (err) {
+    console.warn(`[eBay] Token-feil for "${cardName}": ${err.message}`);
+    return { raw_usd: null, psa9_usd: null, psa10_usd: null, graded: {} };
+  }
 
   const [psa10Prices, psa9Prices] = await Promise.all([
     searchSoldItems(token, appId, `${cardName} PSA 10`),
