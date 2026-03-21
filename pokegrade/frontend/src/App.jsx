@@ -130,27 +130,16 @@ export default function App() {
   const filtered = useMemo(() => applyClientFilters(cards, filters), [cards, filters]);
   const activeFilterCount = Object.values(filters).filter(v => v != null).length;
 
-  async function adminAction(action, label, poll = false) {
+  async function adminAction(action, label) {
     setAdminStatus(`${label}...`);
-    let poller = null;
-    if (poll) {
-      poller = setInterval(async () => {
-        try {
-          const p = await api.getLinkProgress();
-          setAdminStatus(`${label}... ${p.linked} / ${p.total} koblet`);
-        } catch {}
-      }, 3000);
-    }
     try {
       const res = await action();
-      if (poller) clearInterval(poller);
-      const count = res.linked ?? res.refreshed ?? res.listings?.length ?? 0;
+      const count = res.refreshed ?? res.listings?.length ?? 0;
       const errCount = res.errors?.length ?? 0;
       const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
       setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
       if (!res.mock) fetchCards(page, filters);
     } catch (err) {
-      if (poller) clearInterval(poller);
       setAdminStatus(`Feil: ${err.message}`);
     }
   }
@@ -207,12 +196,6 @@ export default function App() {
         {showAdmin && (
           <div className="border-t border-pg-border bg-pg-bg px-4 py-3">
             <div className="max-w-screen-xl mx-auto flex items-center gap-3 flex-wrap">
-              <button
-                onClick={() => adminAction(api.autoLinkCards, 'Kobler API-IDer', true)}
-                className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
-              >
-                Koble API-IDer
-              </button>
               <button
                 onClick={() => adminAction(() => api.refreshPrices(filters.set || null), filters.set ? `Oppdaterer priser (${filters.set})` : 'Oppdaterer alle priser')}
                 className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"

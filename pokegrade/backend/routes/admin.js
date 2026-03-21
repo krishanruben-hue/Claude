@@ -9,12 +9,11 @@ const router = Router();
 router.post('/refresh-prices', async (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   const setId = req.query.set?.trim();
-  res.json({ started: true, message: 'Prisoppdatering startet i bakgrunnen' });
   try {
     const result = setId ? await refreshPricesForSet(setId) : await refreshAllPrices();
-    console.log('[Admin] Prisoppdatering ferdig:', result);
+    res.json(result);
   } catch (err) {
-    console.error('[Admin] Prisoppdatering feilet:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
