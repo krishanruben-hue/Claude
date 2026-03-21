@@ -65,17 +65,26 @@ async function searchSoldItems(appId, keywords, retries = 3) {
   return [];
 }
 
-export async function fetchPrices(cardName) {
+// Rens settnavn for eBay-søk: fjern em-strek og spesialtegn
+function buildSearchBase(cardName, setName) {
+  if (!setName) return cardName;
+  const cleanSet = setName.replace(/\s*[–—]\s*/g, ' ').replace(/&/g, '').trim();
+  return `${cardName} ${cleanSet}`;
+}
+
+export async function fetchPrices(cardName, setName) {
   const appId = process.env.EBAY_APP_ID;
   if (!appId) throw new Error('EBAY_APP_ID ikke konfigurert');
 
+  const base = buildSearchBase(cardName, setName);
+
   // Sekvensielle kall for å unngå rate limiting
-  const psa10Prices = await searchSoldItems(appId, `${cardName} PSA 10`);
+  const psa10Prices = await searchSoldItems(appId, `${base} PSA 10`);
   await delay(1500);
-  const psa9Prices = await searchSoldItems(appId, `${cardName} PSA 9`);
+  const psa9Prices = await searchSoldItems(appId, `${base} PSA 9`);
   await delay(1500);
   // Raw: ekskluder graderte kort via negative keywords
-  const rawPrices = await searchSoldItems(appId, `${cardName} -PSA -BGS -CGC -SGC`);
+  const rawPrices = await searchSoldItems(appId, `${base} -PSA -BGS -CGC -SGC`);
 
   return {
     raw_usd: median(rawPrices),
