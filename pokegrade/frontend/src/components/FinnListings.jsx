@@ -2,9 +2,10 @@ import React from 'react';
 import { fmtNok, fmtPct, deviationColor } from '../utils/format.js';
 
 const FLAG_LABELS = {
-  none: { label: 'Enkelt kort', color: 'bg-green-900/50 text-green-400' },
-  bundle: { label: 'Samling/Lot', color: 'bg-yellow-900/50 text-yellow-400' },
-  irrelevant: { label: 'Irrelevant', color: 'bg-gray-800 text-gray-500' },
+  none:       { label: 'Rå',          color: 'text-green-400 border-green-400' },
+  graded:     { label: 'Gradert',     color: 'text-pg-accent border-pg-accent' },
+  bundle:     { label: 'Samling',     color: 'text-yellow-400 border-yellow-400' },
+  irrelevant: { label: 'Irrelevant',  color: 'text-gray-600 border-gray-600' },
 };
 
 export default function FinnListings({ listings, cardName }) {
@@ -13,8 +14,8 @@ export default function FinnListings({ listings, cardName }) {
 
   if (listings.length === 0) {
     return (
-      <div className="text-center py-6 text-gray-500 text-sm">
-        Ingen Finn.no-annonser lastet enda
+      <div className="text-center py-8 text-[10px] tracking-[0.25em] uppercase text-gray-600">
+        Ingen annonser lastet
       </div>
     );
   }
@@ -24,53 +25,57 @@ export default function FinnListings({ listings, cardName }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-400">{none.length} relevante annonser</span>
+        <span className="text-[10px] tracking-[0.15em] uppercase text-gray-600">
+          {none.length} rå · {listings.length} totalt
+        </span>
         <a
           href={finnUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          className="text-[10px] tracking-[0.15em] uppercase text-blue-400 hover:text-white transition-colors"
         >
-          Aapne Finn.no-sok ↗
+          Åpne Finn.no ↗
         </a>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-0 border border-pg-border">
         {[...none, ...others].map((listing, i) => {
           const flagInfo = FLAG_LABELS[listing.flag] || FLAG_LABELS.none;
           const devCls = deviationColor(listing.deviation);
+          const isIrrelevant = listing.flag === 'irrelevant';
 
           return (
-            <div
+            <a
               key={listing.id || i}
-              className="flex items-start justify-between gap-3 p-3 bg-pg-bg rounded-lg border border-pg-border"
+              href={listing.url || finnUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-start justify-between gap-3 px-3 py-2.5 border-b border-pg-border last:border-b-0 hover:bg-pg-card transition-colors ${isIrrelevant ? 'opacity-40' : ''}`}
+              onClick={e => e.stopPropagation()}
             >
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-white truncate">{listing.title}</div>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${flagInfo.color}`}>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className={`text-[9px] tracking-[0.15em] uppercase border px-1.5 py-0.5 ${flagInfo.color}`}>
                     {flagInfo.label}
                   </span>
                   {listing.location && (
-                    <span className="text-xs text-gray-500">{listing.location}</span>
+                    <span className="text-[10px] text-gray-600">{listing.location}</span>
                   )}
                   {listing.views > 0 && (
-                    <span className="text-xs text-gray-600">{listing.views} visninger</span>
-                  )}
-                  {listing.listing_type && (
-                    <span className="text-xs text-gray-600">{listing.listing_type}</span>
+                    <span className="text-[10px] text-gray-600">{listing.views} vis.</span>
                   )}
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-sm font-semibold text-white">{fmtNok(listing.price_nok)}</div>
+                <div className="text-sm text-white">{fmtNok(listing.price_nok)}</div>
                 {listing.deviation != null && listing.flag === 'none' && (
-                  <div className={`text-xs ${devCls}`}>
-                    {fmtPct(listing.deviation)} vs Pricecharting
+                  <div className={`text-[10px] ${devCls}`}>
+                    {fmtPct(listing.deviation)} vs raw
                   </div>
                 )}
               </div>
-            </div>
+            </a>
           );
         })}
       </div>

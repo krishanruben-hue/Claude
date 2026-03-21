@@ -138,6 +138,8 @@ export async function refreshAllFinnData() {
   for (const card of list) {
     try {
       const listings = await scrapeFinnListings(card.name);
+      // Slett gamle listings for kortet før ny insert for å unngå duplikater
+      await supabase.from('finn_listings').delete().eq('card_id', card.id);
       if (listings.length > 0) {
         const rows = listings.map(l => ({ ...l, card_id: card.id }));
         await supabase.from('finn_listings').insert(rows);
@@ -157,6 +159,8 @@ export async function refreshAllFinnData() {
 export async function refreshFinnForCard(cardId, cardName) {
   if (!supabase) return { listings: [] };
   const listings = await scrapeFinnListings(cardName);
+  // Slett gamle listings for kortet før ny insert
+  await supabase.from('finn_listings').delete().eq('card_id', cardId);
   if (listings.length > 0) {
     const rows = listings.map(l => ({ ...l, card_id: cardId }));
     await supabase.from('finn_listings').insert(rows);

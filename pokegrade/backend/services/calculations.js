@@ -42,10 +42,14 @@ export function usdToNok(usd, fxRate) {
 
 // Klassifiser Finn-annonse (seksjon 6.1)
 export function classifyFinnListing(title, cardName) {
-  const bundleKeywords = ['samling', 'lot', 'bundle', 'pakke', 'flere', 'mixed', 'collection', 'bulk'];
   const titleLower = title.toLowerCase();
 
+  const bundleKeywords = ['samling', 'lot', 'bundle', 'pakke', 'flere', 'mixed', 'collection', 'bulk'];
   if (bundleKeywords.some(kw => titleLower.includes(kw))) return 'bundle';
+
+  // Allerede gradert — ikke relevant som rå graderingskandidat
+  const gradedKeywords = ['psa', 'bgs', 'cgc', 'ace', 'graded', 'gradert'];
+  if (gradedKeywords.some(kw => titleLower.includes(kw))) return 'graded';
 
   const cardWords = cardName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
   const hasMatch = cardWords.some(word => titleLower.includes(word));
