@@ -36,7 +36,7 @@ async function refreshPricesForCards(cards) {
 
   for (const card of list) {
     try {
-      const prices = await fetchPrices(card.name, card.set_name);
+      const prices = await fetchPrices(card.name, card.set_name, card.set_number);
       const hasPrices = prices.psa10_usd != null || prices.psa9_usd != null || prices.raw_usd != null;
 
       if (!hasPrices) {
@@ -75,7 +75,7 @@ async function refreshPricesForCards(cards) {
 
 export async function refreshAllPrices() {
   if (!supabase) return { refreshed: 0, errors: [] };
-  const { data: cards } = await supabase.from('cards').select('id, name, set_name');
+  const { data: cards } = await supabase.from('cards').select('id, name, set_name, set_number');
   const result = await refreshPricesForCards(cards);
   await backfillMissingFxRates();
   return result;
@@ -83,7 +83,7 @@ export async function refreshAllPrices() {
 
 export async function refreshPricesForSet(setId) {
   if (!supabase) return { refreshed: 0, errors: [] };
-  const { data: cards } = await supabase.from('cards').select('id, name, set_name').eq('set_id', setId);
+  const { data: cards } = await supabase.from('cards').select('id, name, set_name, set_number').eq('set_id', setId);
   return refreshPricesForCards(cards);
 }
 
