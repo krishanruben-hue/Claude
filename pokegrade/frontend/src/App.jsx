@@ -54,6 +54,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showWatchlistManager, setShowWatchlistManager] = useState(false);
   const [adminStatus, setAdminStatus] = useState('');
+  const [progress, setProgress] = useState({ running: false, current: 0, total: 0, label: '' });
   const [isMock, setIsMock] = useState(false);
   const [fxRate, setFxRate] = useState(null);
   const [allSets, setAllSets] = useState([]);
@@ -132,15 +133,29 @@ export default function App() {
 
   async function adminAction(action, label) {
     setAdminStatus(`${label}...`);
+    setProgress({ running: true, current: 0, total: 0, label });
+
+    const poller = setInterval(async () => {
+      try {
+        const p = await api.getProgress();
+        setProgress(p);
+      } catch {}
+    }, 500);
+
     try {
       const res = await action();
+      clearInterval(poller);
+      const finalP = await api.getProgress().catch(() => null);
+      setProgress(finalP ?? { running: false, current: 0, total: 0, label });
       const count = res.refreshed ?? res.listings?.length ?? 0;
       const errCount = res.errors?.length ?? 0;
       const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
       setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
       if (!res.mock) fetchCards(page, filters);
     } catch (err) {
+      clearInterval(poller);
       setAdminStatus(`Feil: ${err.message}`);
+      setProgress({ running: false, current: 0, total: 0, label: '' });
     }
   }
 
@@ -214,9 +229,25 @@ export default function App() {
               >
                 Oppdater Finn
               </button>
-              {adminStatus && (
-                <span className="text-sm text-gray-400">{adminStatus}</span>
-              )}
+            </div>
+            {/* Progress bar – alltid synlig i admin-panelet */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                <span>{progress.running ? progress.label : (adminStatus || 'Klar')}</span>
+                {progress.running && progress.total > 0 && (
+                  <span>{progress.current} / {progress.total}</span>
+                )}
+              </div>
+              <div className="w-full bg-pg-border rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-300 ${progress.running ? 'bg-blue-500' : adminStatus.startsWith('Feil') ? 'bg-red-500' : 'bg-pg-accent'}`}
+                  style={{
+                    width: progress.running
+                      ? (progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '5%')
+                      : '100%',
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}

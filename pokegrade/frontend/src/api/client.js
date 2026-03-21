@@ -37,6 +37,7 @@ export const api = {
     return get(`/cards${q ? `?${q}` : ''}`);
   },
   getCard: (id) => get(`/cards/${id}`),
+  getProgress: () => get('/admin/progress'),
   refreshPrices: (setId) => post(`/admin/refresh-prices${setId ? `?set=${encodeURIComponent(setId)}` : ''}`),
   refreshPsa: () => post('/admin/refresh-psa'),
   refreshFinn: () => post('/admin/refresh-finn'),

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
 import { refreshAllPrices, refreshPricesForSet, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
+import { getProgress } from '../services/progress.js';
 import axios from 'axios';
 
 const router = Router();
@@ -48,6 +49,10 @@ router.post('/refresh-finn/:cardId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get('/progress', (req, res) => {
+  res.json(getProgress());
 });
 
 // Debug: test ett eBay-kall og returner rå svar

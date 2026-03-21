@@ -4,6 +4,7 @@ import { fetchPrices } from '../services/ebay.js';
 import { scrapePsaPopulation } from '../scrapers/psa.js';
 import { scrapeFinnListings } from '../scrapers/finn.js';
 import { backfillMissingFxRates } from '../services/exchangerate.js';
+import { startProgress, incrementProgress, endProgress } from '../services/progress.js';
 
 export function startScheduler() {
   if (isMockMode) {
@@ -27,11 +28,13 @@ export function startScheduler() {
 }
 
 async function refreshPricesForCards(cards) {
+  const list = cards || [];
+  startProgress('Oppdaterer priser', list.length);
   const errors = [];
   let refreshed = 0;
   let nullPrices = 0;
 
-  for (const card of cards || []) {
+  for (const card of list) {
     try {
       const prices = await fetchPrices(card.name);
       const hasPrices = prices.psa10_usd != null || prices.psa9_usd != null || prices.raw_usd != null;
@@ -39,27 +42,29 @@ async function refreshPricesForCards(cards) {
       if (!hasPrices) {
         nullPrices++;
         console.warn(`[Prices] Ingen eBay-treff for "${card.name}"`);
-        continue;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const { error } = await supabase.from('price_snapshots').upsert({
-        card_id: card.id,
-        date: today,
-        ...prices,
-      }, { onConflict: 'card_id,date' });
-
-      if (error) {
-        errors.push({ card: card.name, error: error.message });
       } else {
-        refreshed++;
+        const today = new Date().toISOString().split('T')[0];
+        const { error } = await supabase.from('price_snapshots').upsert({
+          card_id: card.id,
+          date: today,
+          ...prices,
+        }, { onConflict: 'card_id,date' });
+
+        if (error) {
+          errors.push({ card: card.name, error: error.message });
+        } else {
+          refreshed++;
+        }
       }
 
       await new Promise(r => setTimeout(r, 2000)); // Rate limit
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
     }
+    incrementProgress();
   }
+
+  endProgress();
 
   if (nullPrices > 0) {
     errors.push({ card: '(ingen treff)', error: `${nullPrices} kort hadde ingen eBay solgt-data` });
@@ -87,10 +92,12 @@ export async function refreshPricesForSet(setId) {
 export async function refreshAllPsaData() {
   if (!supabase) return { refreshed: 0, errors: [] };
   const { data: cards } = await supabase.from('cards').select('id, name, set_name');
+  const list = cards || [];
+  startProgress('Scraper PSA Pop Report', list.length);
   const errors = [];
   let refreshed = 0;
 
-  for (const card of cards || []) {
+  for (const card of list) {
     const pop = await scrapePsaPopulation(card.name, card.set_name);
     if (pop) {
       await supabase.from('psa_population').insert({ card_id: card.id, ...pop });
@@ -98,19 +105,23 @@ export async function refreshAllPsaData() {
     } else {
       errors.push({ card: card.name, error: 'Scraping returnerte ingen data' });
     }
+    incrementProgress();
     await new Promise(r => setTimeout(r, 2000));
   }
 
+  endProgress();
   return { refreshed, errors };
 }
 
 export async function refreshAllFinnData() {
   if (!supabase) return { refreshed: 0, errors: [] };
   const { data: cards } = await supabase.from('cards').select('id, name');
+  const list = cards || [];
+  startProgress('Scraper Finn.no', list.length);
   const errors = [];
   let refreshed = 0;
 
-  for (const card of cards || []) {
+  for (const card of list) {
     try {
       const listings = await scrapeFinnListings(card.name);
       if (listings.length > 0) {
@@ -121,9 +132,11 @@ export async function refreshAllFinnData() {
     } catch (err) {
       errors.push({ card: card.name, error: err.message });
     }
+    incrementProgress();
     await new Promise(r => setTimeout(r, 3000));
   }
 
+  endProgress();
   return { refreshed, errors };
 }
 
