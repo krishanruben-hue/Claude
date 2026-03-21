@@ -69,9 +69,12 @@ export async function fetchPrices(cardName) {
   const psa10Prices = await searchSoldItems(appId, `${cardName} PSA 10`);
   await delay(1500);
   const psa9Prices = await searchSoldItems(appId, `${cardName} PSA 9`);
+  await delay(1500);
+  // Raw: ekskluder graderte kort via negative keywords
+  const rawPrices = await searchSoldItems(appId, `${cardName} -PSA -BGS -CGC -SGC`);
 
   return {
-    raw_usd: null,
+    raw_usd: median(rawPrices),
     psa9_usd: median(psa9Prices),
     psa10_usd: median(psa10Prices),
   };
