@@ -71,12 +71,11 @@ async function refreshPricesForCards(cards) {
     incrementProgress();
   }
 
-  endProgress();
-
   if (nullPrices > 0) {
     errors.push({ card: '(ingen treff)', error: `${nullPrices} kort hadde ingen eBay solgt-data` });
   }
 
+  endProgress({ refreshed, errors });
   return { refreshed, errors };
 }
 
@@ -114,7 +113,7 @@ export async function refreshAllPsaData() {
     await new Promise(r => setTimeout(r, 2000));
   }
 
-  endProgress();
+  endProgress({ refreshed, errors });
   return { refreshed, errors };
 }
 
@@ -141,7 +140,7 @@ export async function refreshAllFinnData() {
     await new Promise(r => setTimeout(r, 3000));
   }
 
-  endProgress();
+  endProgress({ refreshed, errors });
   return { refreshed, errors };
 }
 

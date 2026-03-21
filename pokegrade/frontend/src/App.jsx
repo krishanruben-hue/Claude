@@ -135,25 +135,48 @@ export default function App() {
     setAdminStatus(`${label}...`);
     setProgress({ running: true, current: 0, total: 0, label });
 
-    const poller = setInterval(async () => {
-      try {
-        const p = await api.getProgress();
-        setProgress(p);
-      } catch {}
-    }, 500);
-
     try {
       const res = await action();
-      clearInterval(poller);
-      const finalP = await api.getProgress().catch(() => null);
-      setProgress(finalP ?? { running: false, current: 0, total: 0, label });
-      const count = res.refreshed ?? res.listings?.length ?? 0;
-      const errCount = res.errors?.length ?? 0;
-      const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
-      setAdminStatus(res.mock ? 'Mock-modus aktiv' : `Ferdig: ${count} oppdatert${errMsg}`);
-      if (!res.mock) fetchCards(page, filters);
+
+      if (res.mock) {
+        setAdminStatus('Mock-modus aktiv');
+        setProgress({ running: false, current: 0, total: 0, label: '' });
+        return;
+      }
+
+      if (res.started) {
+        // Backend kjører asynkront — poll til done:true
+        await new Promise((resolve) => {
+          const deadline = setTimeout(resolve, 15 * 60 * 1000); // maks 15 min
+          const poller = setInterval(async () => {
+            try {
+              const p = await api.getProgress();
+              setProgress(p);
+              if (!p.running && p.done) {
+                clearInterval(poller);
+                clearTimeout(deadline);
+                const { result } = p;
+                const count = result?.refreshed ?? 0;
+                const errCount = result?.errors?.length ?? 0;
+                const errMsg = errCount > 0 ? ` (${errCount} feil: ${result.errors[0]?.error})` : '';
+                setAdminStatus(`Ferdig: ${count} oppdatert${errMsg}`);
+                fetchCards(page, filters);
+                resolve();
+              }
+            } catch {}
+          }, 500);
+        });
+      } else {
+        // Synkront svar (PSA, Finn)
+        const finalP = await api.getProgress().catch(() => null);
+        setProgress(finalP ?? { running: false, current: 0, total: 0, label });
+        const count = res.refreshed ?? res.listings?.length ?? 0;
+        const errCount = res.errors?.length ?? 0;
+        const errMsg = errCount > 0 ? ` (${errCount} feil: ${res.errors[0]?.error})` : '';
+        setAdminStatus(`Ferdig: ${count} oppdatert${errMsg}`);
+        fetchCards(page, filters);
+      }
     } catch (err) {
-      clearInterval(poller);
       setAdminStatus(`Feil: ${err.message}`);
       setProgress({ running: false, current: 0, total: 0, label: '' });
     }

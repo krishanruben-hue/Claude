@@ -2,21 +2,20 @@ import { Router } from 'express';
 import { isMockMode } from '../db/supabase.js';
 import { refreshAllPrices, refreshPricesForSet, refreshAllPsaData, refreshAllFinnData, refreshFinnForCard } from '../jobs/scheduler.js';
 import { supabase } from '../db/supabase.js';
-import { getProgress } from '../services/progress.js';
+import { getProgress, startProgress } from '../services/progress.js';
 import axios from 'axios';
 
 const router = Router();
 
-router.post('/refresh-prices', async (req, res) => {
+router.post('/refresh-prices', (req, res) => {
   if (isMockMode) return res.json({ mock: true, message: 'Mock-modus – ingen oppdatering' });
   const setId = req.query.set?.trim();
-  try {
-    const result = setId ? await refreshPricesForSet(setId) : await refreshAllPrices();
-    res.json(result);
-  } catch (err) {
-    console.error('[Admin] refresh-prices krasjet:', err);
-    res.status(500).json({ error: err.message || err.toString() || 'Ukjent feil i prisoppdatering' });
-  }
+  // Signal start umiddelbart så frontend ikke ser gammel done:true
+  startProgress(setId ? `Oppdaterer priser (${setId})` : 'Oppdaterer alle priser', 0);
+  // Kjør asynkront — ikke vent på fullføring
+  (setId ? refreshPricesForSet(setId) : refreshAllPrices())
+    .catch(err => console.error('[Admin] refresh-prices krasjet:', err));
+  res.json({ started: true });
 });
 
 router.post('/refresh-psa', async (req, res) => {
