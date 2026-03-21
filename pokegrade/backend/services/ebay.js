@@ -36,25 +36,29 @@ async function searchSoldItems(appId, keywords, retries = 3) {
         timeout: 10000,
       });
 
-      const ack = res.data?.findCompletedItemsResponse?.[0]?.ack?.[0];
+      const response = res.data?.findCompletedItemsResponse?.[0];
+      const ack = response?.ack?.[0];
       if (ack !== 'Success' && ack !== 'Warning') {
-        const errorId = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.errorId?.[0];
-        const msg = res.data?.findCompletedItemsResponse?.[0]?.errorMessage?.[0]?.error?.[0]?.message?.[0];
+        const errorId = response?.errorMessage?.[0]?.error?.[0]?.errorId?.[0];
+        const msg = response?.errorMessage?.[0]?.error?.[0]?.message?.[0];
         if (errorId === '10001' && attempt < retries) {
           console.warn(`[eBay] Rate limit for "${keywords}", venter ${attempt * 5}s (forsøk ${attempt}/${retries})`);
           await delay(attempt * 5000);
           continue;
         }
-        console.warn(`[eBay] API-feil for "${keywords}": ${msg}`);
+        console.warn(`[eBay] API-feil (ack=${ack}, id=${errorId}) for "${keywords}": ${msg}`);
         return [];
       }
 
-      const items = res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-      return items
+      const totalResults = parseInt(response?.paginationOutput?.[0]?.totalEntries?.[0] ?? '0');
+      const items = response?.searchResult?.[0]?.item || [];
+      const prices = items
         .map(item => parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']))
         .filter(p => !isNaN(p) && p > 0);
+      console.log(`[eBay] "${keywords}" → ${totalResults} totalt, ${items.length} hentet, ${prices.length} gyldige priser`);
+      return prices;
     } catch (err) {
-      console.warn(`[eBay] HTTP ${err.response?.status} for "${keywords}": ${JSON.stringify(err.response?.data)}`);
+      console.warn(`[eBay] HTTP-feil ${err.response?.status} for "${keywords}": ${err.message}`);
       return [];
     }
   }

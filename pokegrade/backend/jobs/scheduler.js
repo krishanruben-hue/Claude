@@ -84,9 +84,7 @@ export async function refreshAllPrices() {
 export async function refreshPricesForSet(setId) {
   if (!supabase) return { refreshed: 0, errors: [] };
   const { data: cards } = await supabase.from('cards').select('id, name').eq('set_id', setId);
-  const result = await refreshPricesForCards(cards);
-  await backfillMissingFxRates();
-  return result;
+  return refreshPricesForCards(cards);
 }
 
 export async function refreshAllPsaData() {

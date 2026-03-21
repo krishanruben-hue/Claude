@@ -14,7 +14,8 @@ router.post('/refresh-prices', async (req, res) => {
     const result = setId ? await refreshPricesForSet(setId) : await refreshAllPrices();
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Admin] refresh-prices krasjet:', err);
+    res.status(500).json({ error: err.message || err.toString() || 'Ukjent feil i prisoppdatering' });
   }
 });
 
