@@ -50,8 +50,9 @@ async function searchSoldItems(appId, keywords, retries = 3) {
           await delay(attempt * 5000);
           continue;
         }
-        console.warn(`[eBay] API-feil (ack=${ack}, id=${errorId}) for "${keywords}": ${msg}`);
-        return [];
+        const errText = `eBay API-feil (ack=${ack}, id=${errorId}): ${msg}`;
+        console.warn(`[eBay] ${errText} for "${keywords}"`);
+        throw new Error(errText);
       }
 
       const totalResults = parseInt(response?.paginationOutput?.[0]?.totalEntries?.[0] ?? '0');
@@ -63,8 +64,9 @@ async function searchSoldItems(appId, keywords, retries = 3) {
       return prices;
     } catch (err) {
       clearTimeout(timer);
+      if (err.message.startsWith('eBay API-feil')) throw err; // re-throw API errors
       console.warn(`[eBay] HTTP-feil ${err.response?.status} for "${keywords}": ${err.message}`);
-      return [];
+      throw new Error(`HTTP ${err.response?.status ?? 'ukjent'}: ${err.message}`);
     }
   }
   return [];
