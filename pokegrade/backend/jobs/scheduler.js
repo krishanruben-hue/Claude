@@ -29,14 +29,25 @@ export function startScheduler() {
 
 async function refreshPricesForCards(cards) {
   const list = cards || [];
-  startProgress('Oppdaterer priser', list.length);
+  const today = new Date().toISOString().split('T')[0];
+
+  // Finn kort som allerede er oppdatert i dag — hopp over dem
+  const { data: existing } = await supabase
+    .from('price_snapshots')
+    .select('card_id')
+    .eq('date', today);
+  const updatedToday = new Set((existing || []).map(r => r.card_id));
+  const toUpdate = list.filter(c => !updatedToday.has(c.id));
+
+  console.log(`[Prices] ${toUpdate.length} av ${list.length} kort trenger oppdatering`);
+  startProgress('Oppdaterer priser', toUpdate.length);
   const errors = [];
   let refreshed = 0;
   let nullPrices = 0;
 
   const CARD_TIMEOUT_MS = 45000; // maks 45s per kort (3 søk × 10s + buffert)
 
-  for (const card of list) {
+  for (const card of toUpdate) {
     try {
       const prices = await Promise.race([
         fetchPrices(card.name, card.set_name),
@@ -50,7 +61,6 @@ async function refreshPricesForCards(cards) {
         nullPrices++;
         console.warn(`[Prices] Ingen eBay-treff for "${card.name}"`);
       } else {
-        const today = new Date().toISOString().split('T')[0];
         const { error } = await supabase.from('price_snapshots').upsert({
           card_id: card.id,
           date: today,
