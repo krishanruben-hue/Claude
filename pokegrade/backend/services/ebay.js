@@ -17,6 +17,8 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 async function searchSoldItems(appId, keywords, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
       const res = await axios.get(FINDING_URL, {
         params: {
@@ -34,7 +36,9 @@ async function searchSoldItems(appId, keywords, retries = 3) {
           'paginationInput.entriesPerPage': '50',
         },
         timeout: 10000,
+        signal: controller.signal,
       });
+      clearTimeout(timer);
 
       const response = res.data?.findCompletedItemsResponse?.[0];
       const ack = response?.ack?.[0];
@@ -58,6 +62,7 @@ async function searchSoldItems(appId, keywords, retries = 3) {
       console.log(`[eBay] "${keywords}" → ${totalResults} totalt, ${items.length} hentet, ${prices.length} gyldige priser`);
       return prices;
     } catch (err) {
+      clearTimeout(timer);
       console.warn(`[eBay] HTTP-feil ${err.response?.status} for "${keywords}": ${err.message}`);
       return [];
     }

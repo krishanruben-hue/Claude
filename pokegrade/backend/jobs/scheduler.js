@@ -34,9 +34,16 @@ async function refreshPricesForCards(cards) {
   let refreshed = 0;
   let nullPrices = 0;
 
+  const CARD_TIMEOUT_MS = 45000; // maks 45s per kort (3 søk × 10s + buffert)
+
   for (const card of list) {
     try {
-      const prices = await fetchPrices(card.name, card.set_name, card.set_number);
+      const prices = await Promise.race([
+        fetchPrices(card.name, card.set_name, card.set_number),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout: eBay-søk tok for lang tid')), CARD_TIMEOUT_MS)
+        ),
+      ]);
       const hasPrices = prices.psa10_usd != null || prices.psa9_usd != null || prices.raw_usd != null;
 
       if (!hasPrices) {
