@@ -39,7 +39,7 @@ async function refreshPricesForCards(cards) {
   for (const card of list) {
     try {
       const prices = await Promise.race([
-        fetchPrices(card.name, card.set_name, card.set_number),
+        fetchPrices(card.name, card.set_name),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout: eBay-søk tok for lang tid')), CARD_TIMEOUT_MS)
         ),

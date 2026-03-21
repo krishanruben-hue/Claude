@@ -71,21 +71,20 @@ async function searchSoldItems(appId, keywords, retries = 3) {
 }
 
 // Rens settnavn for eBay-søk: fjern em-strek og spesialtegn
-function buildSearchBase(cardName, setName, setNumber) {
+function buildSearchBase(cardName, setName) {
   const parts = [cardName];
   if (setName) {
     const cleanSet = setName.replace(/\s*[–—]\s*/g, ' ').replace(/&/g, '').trim();
     parts.push(cleanSet);
   }
-  if (setNumber) parts.push(setNumber);
   return parts.join(' ');
 }
 
-export async function fetchPrices(cardName, setName, setNumber) {
+export async function fetchPrices(cardName, setName) {
   const appId = process.env.EBAY_APP_ID;
   if (!appId) throw new Error('EBAY_APP_ID ikke konfigurert');
 
-  const base = buildSearchBase(cardName, setName, setNumber);
+  const base = buildSearchBase(cardName, setName);
 
   // Sekvensielle kall for å unngå rate limiting
   const psa10Prices = await searchSoldItems(appId, `${base} PSA 10`);
