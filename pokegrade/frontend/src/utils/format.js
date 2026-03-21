@@ -25,7 +25,7 @@ export function fmtNumber(value) {
 }
 
 export function roiColor(roi) {
-  if (roi == null) return 'text-gray-400';
+  if (roi == null) return 'text-gray-500';
   if (roi >= 1.0) return 'text-green-400';
   if (roi >= 0.5) return 'text-lime-400';
   if (roi >= 0) return 'text-yellow-400';
@@ -33,7 +33,7 @@ export function roiColor(roi) {
 }
 
 export function deviationColor(dev) {
-  if (dev == null) return 'text-gray-400';
+  if (dev == null) return 'text-gray-500';
   if (dev <= -0.05) return 'text-green-400';
   if (dev <= 0.1) return 'text-yellow-400';
   return 'text-red-400';

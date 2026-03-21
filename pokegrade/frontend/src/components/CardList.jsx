@@ -23,7 +23,7 @@ export default function CardList({ cards, sort, onSortChange, onCardClick, watch
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-pg-border">
+    <div className="overflow-x-auto border border-pg-border">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-pg-card border-b border-pg-border">
@@ -31,11 +31,11 @@ export default function CardList({ cards, sort, onSortChange, onCardClick, watch
               <th
                 key={col.key}
                 onClick={() => toggleSort(col.key)}
-                className={`px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-white transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'} ${sort?.key === col.key ? 'text-pg-accent' : ''}`}
+                className={`px-3 py-3 text-[9px] font-medium tracking-[0.2em] text-gray-600 uppercase cursor-pointer select-none hover:text-white transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'} ${sort?.key === col.key ? 'text-pg-accent' : ''}`}
               >
                 {col.label}
                 {sort?.key === col.key && (
-                  <span className="ml-1">{sort.dir === 'desc' ? '↓' : '↑'}</span>
+                  <span className="ml-1 opacity-60">{sort.dir === 'desc' ? '↓' : '↑'}</span>
                 )}
               </th>
             ))}
@@ -45,8 +45,8 @@ export default function CardList({ cards, sort, onSortChange, onCardClick, watch
         <tbody className="bg-pg-bg">
           {cards.length === 0 ? (
             <tr>
-              <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
-                Ingen kort matcher aktive filtre
+              <td colSpan={10} className="px-4 py-16 text-center text-[10px] tracking-[0.25em] uppercase text-gray-600">
+                Ingen kort matcher filtrene
               </td>
             </tr>
           ) : (
@@ -63,8 +63,8 @@ export default function CardList({ cards, sort, onSortChange, onCardClick, watch
           )}
         </tbody>
       </table>
-      <div className="bg-pg-card px-4 py-2 text-xs text-gray-500 border-t border-pg-border">
-        {cards.length} kort vises
+      <div className="bg-pg-card px-4 py-2 text-[9px] tracking-[0.15em] uppercase text-gray-600 border-t border-pg-border">
+        {cards.length} kort
       </div>
     </div>
   );

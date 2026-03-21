@@ -2,35 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Yeezy palette ────────────────────────────────────────────────────── */
 :root {
-  --pg-bg: #f1f5f9;
-  --pg-card: #ffffff;
-  --pg-border: #e2e8f0;
+  --pg-bg:     #F2EDE4;   /* parchment / bone */
+  --pg-card:   #E8E2D8;   /* slightly deeper bone */
+  --pg-border: #CBBFAC;   /* warm taupe border */
 }
 
 html.dark {
-  --pg-bg: #0f1117;
-  --pg-card: #1a1d27;
-  --pg-border: #2a2d3d;
+  --pg-bg:     #0D0B09;   /* near-black warm */
+  --pg-card:   #161410;   /* warm dark surface */
+  --pg-border: #272320;   /* barely-there warm border */
 }
 
+/* ─── Base typography ──────────────────────────────────────────────────── */
 body {
   background-color: var(--pg-bg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.01em;
 }
 
-/* Light mode text overrides */
-html:not(.dark) body { color: #1e293b; }
-html:not(.dark) .text-white { color: #0f172a !important; }
-html:not(.dark) .text-gray-100 { color: #1e293b !important; }
-html:not(.dark) .text-gray-300 { color: #374151 !important; }
-html:not(.dark) .text-gray-400 { color: #6b7280 !important; }
-html:not(.dark) .text-gray-500 { color: #9ca3af !important; }
-html:not(.dark) .text-red-300 { color: #dc2626 !important; }
-html:not(.dark) .text-yellow-400 { color: #d97706 !important; }
-html:not(.dark) .text-green-400 { color: #16a34a !important; }
-html:not(.dark) .text-blue-400 { color: #2563eb !important; }
+/* ─── Dark mode: warm bone/taupe overrides for Tailwind gray classes ───── */
+html.dark .text-white        { color: #EAE4D4 !important; }
+html.dark .text-gray-100     { color: #EAE4D4 !important; }
+html.dark .text-gray-300     { color: #A09078 !important; }
+html.dark .text-gray-400     { color: #7A6E60 !important; }
+html.dark .text-gray-500     { color: #524840 !important; }
+html.dark .text-gray-600     { color: #382E28 !important; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--pg-bg); }
-::-webkit-scrollbar-thumb { background: var(--pg-border); border-radius: 3px; }
+/* Semantic: earth tones instead of neon */
+html.dark .text-green-400    { color: #7A9460 !important; }
+html.dark .text-lime-400     { color: #9AAA70 !important; }
+html.dark .text-yellow-400   { color: #C0981C !important; }
+html.dark .text-red-400      { color: #9A5040 !important; }
+html.dark .text-red-300      { color: #9A5040 !important; }
+html.dark .text-blue-400     { color: #6090B0 !important; }
+html.dark .text-violet-300   { color: #C4AF88 !important; }
+
+/* ─── Light mode: warm deep tones ─────────────────────────────────────── */
+html:not(.dark) body           { color: #1A1410; }
+html:not(.dark) .text-white    { color: #1A1410 !important; }
+html:not(.dark) .text-gray-100 { color: #1A1410 !important; }
+html:not(.dark) .text-gray-300 { color: #3A3028 !important; }
+html:not(.dark) .text-gray-400 { color: #5A5048 !important; }
+html:not(.dark) .text-gray-500 { color: #8A8070 !important; }
+html:not(.dark) .text-gray-600 { color: #6A6058 !important; }
+html:not(.dark) .text-red-300  { color: #8A4030 !important; }
+html:not(.dark) .text-yellow-400 { color: #907010 !important; }
+html:not(.dark) .text-green-400  { color: #4A7040 !important; }
+html:not(.dark) .text-blue-400   { color: #406080 !important; }
+
+/* ─── Scrollbar — ultra minimal ─────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 2px; height: 2px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--pg-border); }
+
+/* ─── Selection ──────────────────────────────────────────────────────────── */
+::selection { background: #C4AF8830; color: inherit; }

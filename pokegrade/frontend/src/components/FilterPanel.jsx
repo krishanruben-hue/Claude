@@ -28,40 +28,37 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
   }
 
   return (
-    <div className="bg-pg-card border border-pg-border rounded-xl p-4 mb-4 space-y-3">
+    <div className="border border-pg-border p-4 mb-4 space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-300">Filtre</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-gray-600">Filtre</span>
           {activeCount > 0 && (
-            <span className="text-xs bg-pg-accent text-white px-2 py-0.5 rounded-full">{activeCount} aktiv</span>
+            <span className="text-[9px] tracking-[0.15em] uppercase text-pg-accent border border-pg-accent px-2 py-0.5">{activeCount}</span>
           )}
         </div>
         {activeCount > 0 && (
-          <button onClick={reset} className="text-xs text-gray-400 hover:text-white transition-colors">
-            Nullstill alle
+          <button onClick={reset} className="text-[9px] tracking-[0.15em] uppercase text-gray-600 hover:text-white transition-colors">
+            Nullstill
           </button>
         )}
       </div>
 
       {/* Søk, sett og rarity */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-sm">🔍</span>
-          <input
-            type="text"
-            value={searchText}
-            onChange={e => {
-              setSearchText(e.target.value);
-              onChange('search', e.target.value || null);
-            }}
-            placeholder="Søk på kortnavn..."
-            className={`w-full bg-pg-bg border rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-pg-accent transition-colors ${values.search ? 'border-pg-accent' : 'border-pg-border'}`}
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row gap-0">
+        <input
+          type="text"
+          value={searchText}
+          onChange={e => {
+            setSearchText(e.target.value);
+            onChange('search', e.target.value || null);
+          }}
+          placeholder="Søk..."
+          className={`flex-1 bg-pg-bg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none transition-colors ${values.search ? 'border-pg-accent' : 'border-pg-border'}`}
+        />
         <select
           value={values.set || ''}
           onChange={e => onChange('set', e.target.value || null)}
-          className={`bg-pg-bg border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pg-accent transition-colors ${values.set ? 'border-pg-accent' : 'border-pg-border'}`}
+          className={`bg-pg-bg border-t border-b border-r px-3 py-2 text-sm text-gray-400 focus:outline-none transition-colors ${values.set ? 'border-pg-accent text-white' : 'border-pg-border'}`}
         >
           <option value="">Alle sett</option>
           {allSets.map(s => (
@@ -71,20 +68,20 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
         <select
           value={values.rarity || ''}
           onChange={e => onChange('rarity', e.target.value || null)}
-          className={`bg-pg-bg border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pg-accent transition-colors ${values.rarity ? 'border-pg-accent' : 'border-pg-border'}`}
+          className={`bg-pg-bg border-t border-b border-r px-3 py-2 text-sm text-gray-400 focus:outline-none transition-colors ${values.rarity ? 'border-pg-accent text-white' : 'border-pg-border'}`}
         >
           <option value="">Alle rarity</option>
-          <option value="Special Illustration Rare">Special Illustration Rare</option>
-          <option value="Illustration Rare">Illustration Rare</option>
+          <option value="Special Illustration Rare">SIR</option>
+          <option value="Illustration Rare">IR</option>
           <option value="Hyper Rare">Hyper Rare</option>
-          <option value="Special Art Rare">Special Art Rare</option>
-          <option value="Rare Holo VMAX">Rare Holo VMAX</option>
-          <option value="Rare Holo V">Rare Holo V</option>
-          <option value="Rare Holo VSTAR">Rare Holo VSTAR</option>
-          <option value="Rare Rainbow">Rare Rainbow</option>
-          <option value="Rare Secret">Rare Secret</option>
-          <option value="Rare Ultra">Rare Ultra</option>
-          <option value="Rare Holo">Rare Holo</option>
+          <option value="Special Art Rare">SAR</option>
+          <option value="Rare Holo VMAX">VMAX</option>
+          <option value="Rare Holo V">V</option>
+          <option value="Rare Holo VSTAR">VSTAR</option>
+          <option value="Rare Rainbow">Rainbow</option>
+          <option value="Rare Secret">Secret</option>
+          <option value="Rare Ultra">Ultra</option>
+          <option value="Rare Holo">Holo</option>
           <option value="Uncommon">Uncommon</option>
           <option value="Common">Common</option>
         </select>
@@ -98,8 +95,8 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
           const isActive = rawVal != null;
 
           return (
-            <div key={f.key} className="flex flex-col gap-1">
-              <label className={`text-xs ${isActive ? 'text-pg-accent' : 'text-gray-400'}`}>
+            <div key={f.key} className="flex flex-col gap-1.5">
+              <label className={`text-[9px] tracking-[0.18em] uppercase ${isActive ? 'text-pg-accent' : 'text-gray-600'}`}>
                 {f.label}
               </label>
               <div className="relative">
@@ -114,10 +111,10 @@ export default function FilterPanel({ values, onChange, activeCount, allSets }) 
                     onChange(f.key, f.pct ? num / 100 : num);
                   }}
                   placeholder="–"
-                  className={`w-full bg-pg-bg border rounded px-2 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-pg-accent transition-colors ${isActive ? 'border-pg-accent' : 'border-pg-border'}`}
+                  className={`w-full bg-pg-bg border px-2 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none transition-colors ${isActive ? 'border-pg-accent' : 'border-pg-border'}`}
                 />
                 {f.unit && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none">
                     {f.unit}
                   </span>
                 )}

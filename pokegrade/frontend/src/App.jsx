@@ -185,88 +185,87 @@ export default function App() {
   return (
     <div className="min-h-screen bg-pg-bg text-gray-100">
       {/* Header */}
-      <header className="border-b border-pg-border bg-pg-card sticky top-0 z-20">
-        <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🎴</span>
-            <span className="text-lg font-bold text-white tracking-tight">PokeGrade</span>
+      <header className="border-b border-pg-border bg-pg-bg sticky top-0 z-20">
+        <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <span className="text-[11px] tracking-[0.4em] uppercase font-medium text-white">POKEGRADE</span>
             {isMock && (
-              <span className="text-xs bg-yellow-900/60 text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-700/40">
-                Demo-data
+              <span className="text-[9px] tracking-[0.2em] uppercase border border-pg-border text-gray-500 px-2 py-0.5">
+                DEMO
               </span>
             )}
             {fxRate && (
-              <span className="text-xs text-gray-500 hidden sm:block">
+              <span className="text-[10px] tracking-[0.15em] uppercase text-gray-600 hidden sm:block">
                 1 USD = {fxRate.toFixed(2)} NOK
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <button
               onClick={() => setDarkMode(d => !d)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="text-[10px] tracking-[0.18em] uppercase px-4 py-3 border-l border-t border-b border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
               title={darkMode ? 'Bytt til lys modus' : 'Bytt til mørk modus'}
             >
-              {darkMode ? '☀' : '🌙'}
+              {darkMode ? '○' : '●'}
             </button>
             <button
               onClick={() => setShowWatchlistManager(true)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="text-[10px] tracking-[0.18em] uppercase px-4 py-3 border-l border-t border-b border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
             >
-              ★ Watchlister {watchlists.length > 0 && <span className="ml-1 text-pg-accent">{watchlists.length}</span>}
+              Watchlister{watchlists.length > 0 && <span className="ml-1.5 text-pg-accent">{watchlists.length}</span>}
             </button>
             <button
               onClick={() => setShowBudget(true)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="text-[10px] tracking-[0.18em] uppercase px-4 py-3 border-l border-t border-b border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
             >
               Budsjett
             </button>
             <button
               onClick={() => setShowAdmin(prev => !prev)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-pg-border hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="text-[10px] tracking-[0.18em] uppercase px-4 py-3 border border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
             >
-              ⚙ Admin
+              Admin
             </button>
           </div>
         </div>
 
         {/* Admin-panel */}
         {showAdmin && (
-          <div className="border-t border-pg-border bg-pg-bg px-4 py-3">
-            <div className="max-w-screen-xl mx-auto flex items-center gap-3 flex-wrap">
+          <div className="border-t border-pg-border bg-pg-bg px-4 py-4">
+            <div className="max-w-screen-xl mx-auto flex items-center gap-0 flex-wrap mb-4">
               <button
                 onClick={() => adminAction(() => api.refreshPrices(filters.set || null), filters.set ? `Oppdaterer priser (${filters.set})` : 'Oppdaterer alle priser')}
-                className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
+                className="text-[10px] tracking-[0.18em] uppercase px-4 py-2.5 border border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
               >
-                Oppdater priser{filters.set ? ` (${filters.set})` : ''}
+                Priser{filters.set ? ` (${filters.set})` : ''}
               </button>
               <button
                 onClick={() => adminAction(api.refreshPsa, 'Scraper PSA Pop Report')}
-                className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
+                className="text-[10px] tracking-[0.18em] uppercase px-4 py-2.5 border-t border-b border-r border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
               >
-                Oppdater PSA pop
+                PSA Pop
               </button>
               <button
                 onClick={() => adminAction(api.refreshFinn, 'Scraper Finn.no')}
-                className="text-sm px-3 py-1.5 bg-pg-card border border-pg-border rounded-lg hover:border-pg-accent text-gray-300 hover:text-white transition-colors"
+                className="text-[10px] tracking-[0.18em] uppercase px-4 py-2.5 border-t border-b border-r border-pg-border text-gray-500 hover:text-white hover:bg-pg-card transition-colors"
               >
-                Oppdater Finn
+                Finn.no
               </button>
             </div>
-            {/* Progress bar – alltid synlig i admin-panelet */}
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+            {/* Progress */}
+            <div className="max-w-screen-xl mx-auto">
+              <div className="flex items-center justify-between text-[10px] tracking-[0.12em] uppercase text-gray-600 mb-2">
                 <span>{progress.running ? progress.label : (adminStatus || 'Klar')}</span>
                 {progress.running && progress.total > 0 && (
                   <span>{progress.current} / {progress.total}</span>
                 )}
               </div>
-              <div className="w-full bg-pg-border rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-pg-border h-px overflow-hidden">
                 <div
-                  className={`h-1.5 rounded-full transition-all duration-300 ${progress.running ? 'bg-blue-500' : adminStatus.startsWith('Feil') ? 'bg-red-500' : 'bg-pg-accent'}`}
+                  className={`h-px transition-all duration-500 ${adminStatus.startsWith('Feil') ? 'bg-red-400' : 'bg-pg-accent'}`}
                   style={{
                     width: progress.running
-                      ? (progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '5%')
+                      ? (progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '4%')
                       : '100%',
                   }}
                 />
@@ -278,12 +277,12 @@ export default function App() {
 
       {/* Watchlist-filterlinje */}
       {watchlists.length > 0 && (
-        <div className="border-b border-pg-border bg-pg-card/50 px-4 py-2">
-          <div className="max-w-screen-xl mx-auto flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-500 mr-1">Watchliste:</span>
+        <div className="border-b border-pg-border bg-pg-bg px-4 py-2">
+          <div className="max-w-screen-xl mx-auto flex items-center gap-0 flex-wrap">
+            <span className="text-[9px] tracking-[0.2em] uppercase text-gray-600 mr-3">Watch</span>
             <button
               onClick={() => handleFilterChange('watchlist', null)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${!filters.watchlist ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
+              className={`text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 border transition-colors ${!filters.watchlist ? 'border-pg-accent text-pg-accent' : 'border-pg-border text-gray-500 hover:text-white'}`}
             >
               Alle
             </button>
@@ -291,9 +290,9 @@ export default function App() {
               <button
                 key={w.id}
                 onClick={() => handleFilterChange('watchlist', filters.watchlist?.id === w.id ? null : w)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filters.watchlist?.id === w.id ? 'border-pg-accent bg-pg-accent/20 text-white' : 'border-pg-border text-gray-400 hover:border-gray-500 hover:text-white'}`}
+                className={`text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 border-t border-b border-r transition-colors ${filters.watchlist?.id === w.id ? 'border-pg-accent text-pg-accent' : 'border-pg-border text-gray-500 hover:text-white'}`}
               >
-                ★ {w.name} <span className="text-gray-500 ml-1">{w.cardIds.length}</span>
+                {w.name} <span className="text-gray-600 ml-1">{w.cardIds.length}</span>
               </button>
             ))}
           </div>
@@ -303,12 +302,12 @@ export default function App() {
       {/* Hovedinnhold */}
       <main className="max-w-screen-xl mx-auto px-4 py-5">
         {loading && (
-          <div className="text-center py-20 text-gray-400">Laster kortliste...</div>
+          <div className="text-center py-20 text-[10px] tracking-[0.3em] uppercase text-gray-600">Laster</div>
         )}
 
         {error && (
-          <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-4 text-red-300 text-sm">
-            Kunne ikke hente data: {error}
+          <div className="border border-pg-border p-4 text-red-400 text-xs tracking-[0.1em] uppercase">
+            Feil: {error}
           </div>
         )}
 
@@ -321,66 +320,64 @@ export default function App() {
               allSets={allSets}
             />
             {/* Verktøylinje: antall, sortering, view-velger, paginering */}
-            <div className="flex flex-wrap items-center gap-2 mb-3 text-sm text-gray-500">
-              <span className="mr-auto">{total.toLocaleString('nb-NO')} kort totalt</span>
+            <div className="flex flex-wrap items-center gap-0 mb-4 border border-pg-border">
+              <span className="text-[10px] tracking-[0.15em] uppercase text-gray-600 px-4 py-2.5 border-r border-pg-border mr-auto">
+                {total.toLocaleString('nb-NO')} kort
+              </span>
 
               {/* Sortering */}
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-600 hidden sm:block">Sorter:</span>
-                <select
-                  value={sort.key}
-                  onChange={e => setSort(s => ({ ...s, key: e.target.value }))}
-                  className="text-xs bg-pg-card border border-pg-border rounded px-2 py-1 text-gray-300 hover:border-gray-500 focus:outline-none focus:border-pg-accent cursor-pointer"
-                >
-                  <option value="roi">ROI (PSA10)</option>
-                  <option value="set_number">Nr. i sett</option>
-                  <option value="name">Kortnavn</option>
-                  <option value="raw_nok">Raw-pris</option>
-                  <option value="psa10_nok">PSA10-pris</option>
-                  <option value="multiplier">Multiplier</option>
-                  <option value="gem_rate">Gem rate</option>
-                  <option value="psa10_pop">PSA10 pop</option>
-                </select>
-                <button
-                  onClick={() => setSort(s => ({ ...s, dir: s.dir === 'desc' ? 'asc' : 'desc' }))}
-                  className="text-xs px-2 py-1 bg-pg-card border border-pg-border rounded hover:border-gray-500 text-gray-300 hover:text-white transition-colors"
-                  title={sort.dir === 'desc' ? 'Synkende' : 'Stigende'}
-                >
-                  {sort.dir === 'desc' ? '↓' : '↑'}
-                </button>
-              </div>
+              <select
+                value={sort.key}
+                onChange={e => setSort(s => ({ ...s, key: e.target.value }))}
+                className="text-[10px] tracking-[0.12em] uppercase bg-pg-bg border-r border-pg-border px-3 py-2.5 text-gray-500 hover:text-white focus:outline-none focus:text-white cursor-pointer transition-colors"
+              >
+                <option value="roi">ROI</option>
+                <option value="set_number">Nr.</option>
+                <option value="name">Navn</option>
+                <option value="raw_nok">Raw</option>
+                <option value="psa10_nok">PSA10</option>
+                <option value="multiplier">Multi</option>
+                <option value="gem_rate">Gem</option>
+                <option value="psa10_pop">Pop</option>
+              </select>
+              <button
+                onClick={() => setSort(s => ({ ...s, dir: s.dir === 'desc' ? 'asc' : 'desc' }))}
+                className="text-[10px] px-3 py-2.5 border-r border-pg-border text-gray-500 hover:text-white transition-colors"
+              >
+                {sort.dir === 'desc' ? '↓' : '↑'}
+              </button>
 
               {/* View-velger */}
-              <div className="flex items-center gap-0 border border-pg-border rounded-lg overflow-hidden">
-                {[['list','☰'],['grid','⊞'],['icon','⊟']].map(([v, icon]) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    title={v === 'list' ? 'Listevisning' : v === 'grid' ? 'Gridvisning' : 'Ikonvisning'}
-                    className={`px-3 py-1 text-sm transition-colors ${view === v ? 'bg-pg-accent text-white' : 'text-gray-400 hover:text-white hover:bg-pg-card'}`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+              {[['list','☰'],['grid','⊞'],['icon','⊟']].map(([v, icon]) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-2.5 text-sm border-r border-pg-border transition-colors ${view === v ? 'text-pg-accent' : 'text-gray-600 hover:text-white'}`}
+                >
+                  {icon}
+                </button>
+              ))}
+
               {totalPages > 1 && (
-                <div className="flex items-center gap-2">
+                <>
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-2 py-1 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                    className="px-3 py-2.5 border-r border-pg-border text-gray-500 hover:text-white disabled:opacity-25 disabled:cursor-default transition-colors"
                   >
                     ‹
                   </button>
-                  <span>Side {page} av {totalPages}</span>
+                  <span className="text-[10px] tracking-[0.1em] uppercase text-gray-600 px-3 py-2.5 border-r border-pg-border">
+                    {page}/{totalPages}
+                  </span>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="px-2 py-1 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                    className="px-3 py-2.5 text-gray-500 hover:text-white disabled:opacity-25 disabled:cursor-default transition-colors"
                   >
                     ›
                   </button>
-                </div>
+                </>
               )}
             </div>
             {view === 'list' && (
@@ -410,21 +407,23 @@ export default function App() {
               />
             )}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500">
+              <div className="flex items-center justify-center gap-0 mt-8 border border-pg-border w-fit mx-auto">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1.5 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                  className="text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border-r border-pg-border text-gray-500 hover:text-white disabled:opacity-25 disabled:cursor-default transition-colors"
                 >
-                  ‹ Forrige
+                  ← Forrige
                 </button>
-                <span>Side {page} av {totalPages}</span>
+                <span className="text-[10px] tracking-[0.12em] uppercase text-gray-600 px-5 py-2.5 border-r border-pg-border">
+                  {page} / {totalPages}
+                </span>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-3 py-1.5 rounded border border-pg-border hover:border-gray-500 disabled:opacity-30 disabled:cursor-default"
+                  className="text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 text-gray-500 hover:text-white disabled:opacity-25 disabled:cursor-default transition-colors"
                 >
-                  Neste ›
+                  Neste →
                 </button>
               </div>
             )}
